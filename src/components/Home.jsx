@@ -37,23 +37,24 @@ function Home() {
   }
 
   return (
-    <div className="flex flex-col items-center justify-center text-center px-8 py-32">
-      <h1 className="text-6xl font-bold text-white mb-4 tracking-tight">
+    <div className="flex flex-col items-center justify-center text-center px-4 md:px-8 py-16 md:py-32">
+      <h1 className="text-4xl md:text-6xl font-bold text-white mb-4 tracking-tight">
         Welcome to <span className="text-green-400">PixelGrove</span>
       </h1>
-      <p className="text-gray-400 text-xl mb-10 max-w-xl">
+      <p className="text-gray-400 text-lg md:text-xl mb-10 max-w-xl">
         The best shop for Roblox & Adopt Me items.
         Rare pets and more — all in one place.
       </p>
       <div className="flex gap-4">
-        <a href="/shop" className="bg-green-500 hover:bg-green-400 text-black font-bold px-8 py-3 rounded-lg transition">
+        <a href="/shop" className="bg-green-500 hover:bg-green-400 text-black font-bold px-6 md:px-8 py-3 rounded-lg transition">
           Browse Shop
         </a>
-        <a href="/about" className="border border-green-500 text-green-400 hover:bg-green-500 hover:text-black font-bold px-8 py-3 rounded-lg transition">
+        <a href="/about" className="border border-green-500 text-green-400 hover:bg-green-500 hover:text-black font-bold px-6 md:px-8 py-3 rounded-lg transition">
           Learn More
         </a>
       </div>
-      <div className="grid grid-cols-2 gap-6 max-w-2xl mx-auto mt-8">
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-2xl mx-auto mt-8 w-full">
         <div className="bg-gray-900 border border-gray-800 hover:border-green-500 transition p-8 rounded-xl text-center">
           <div className="text-4xl mb-4">🐾</div>
           <h3 className="text-white font-bold text-xl mb-2">Adopt Me Pets</h3>
@@ -65,35 +66,36 @@ function Home() {
           <p className="text-gray-400">Quick and safe delivery every single time</p>
         </div>
       </div>
-      <div className="flex gap-16 mt-24 border-t border-gray-800 pt-16 max-w-4xl w-full justify-center">
+
+      <div className="grid grid-cols-2 md:flex md:gap-16 gap-6 mt-24 border-t border-gray-800 pt-16 max-w-4xl w-full justify-center">
         <div className="text-center">
-          <h3 className="text-green-400 text-4xl font-bold">Many</h3>
-          <p className="text-gray-400 mt-1">Items Available</p>
+          <h3 className="text-green-400 text-3xl md:text-4xl font-bold">Many</h3>
+          <p className="text-gray-400 mt-1 text-sm md:text-base">Items Available</p>
         </div>
         <div className="text-center">
-          <h3 className="text-green-400 text-4xl font-bold">Fast</h3>
-          <p className="text-gray-400 mt-1">Delivery</p>
+          <h3 className="text-green-400 text-3xl md:text-4xl font-bold">Fast</h3>
+          <p className="text-gray-400 mt-1 text-sm md:text-base">Delivery</p>
         </div>
         <div className="text-center">
-          <h3 className="text-green-400 text-4xl font-bold">24/7</h3>
-          <p className="text-gray-400 mt-1">Support</p>
+          <h3 className="text-green-400 text-3xl md:text-4xl font-bold">24/7</h3>
+          <p className="text-gray-400 mt-1 text-sm md:text-base">Support</p>
         </div>
         <div className="text-center">
-          <h3 className="text-green-400 text-4xl font-bold">100%</h3>
-          <p className="text-gray-400 mt-1">Safe & Secure</p>
+          <h3 className="text-green-400 text-3xl md:text-4xl font-bold">100%</h3>
+          <p className="text-gray-400 mt-1 text-sm md:text-base">Safe & Secure</p>
         </div>
       </div>
 
       {/* Reviews Section */}
       <div className="mt-24 border-t border-gray-800 pt-16 max-w-4xl w-full">
-        <h2 className="text-4xl font-bold text-white mb-2">What People Say</h2>
+        <h2 className="text-3xl md:text-4xl font-bold text-white mb-2">What People Say</h2>
         <p className="text-gray-400 mb-10">Real reviews from real customers 🌿</p>
 
         {reviews.length === 0 ? (
           <p className="text-gray-600 mb-10">No reviews yet — be the first!</p>
         ) : (
           <>
-            <div className="grid grid-cols-2 gap-6 mb-6 text-left">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6 text-left">
               {reviews.map(review => (
                 <div key={review.id} className="bg-gray-900 border border-gray-800 rounded-xl p-6">
                   <div className="flex items-center justify-between mb-3">
@@ -113,7 +115,7 @@ function Home() {
         )}
 
         {/* Submit Review Form */}
-        <div className="bg-gray-900 border border-gray-800 rounded-xl p-8 text-left max-w-xl mx-auto">
+        <div className="bg-gray-900 border border-gray-800 rounded-xl p-6 md:p-8 text-left max-w-xl mx-auto">
           <h3 className="text-white font-bold text-xl mb-6">Leave a Review</h3>
           {submitted ? (
             <div className="text-center py-4">

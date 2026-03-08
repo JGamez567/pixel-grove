@@ -109,8 +109,8 @@ function Shop() {
   )
 
   return (
-    <div className="px-8 py-16 max-w-6xl mx-auto">
-      <h1 className="text-5xl font-bold text-white mb-2">Shop</h1>
+    <div className="px-4 md:px-8 py-16 max-w-6xl mx-auto">
+      <h1 className="text-4xl md:text-5xl font-bold text-white mb-2">Shop</h1>
       <p className="text-gray-400 mb-8">Browse our latest items</p>
       <input
         type="text"
@@ -119,12 +119,12 @@ function Shop() {
         onChange={e => setSearch(e.target.value)}
         className="w-full bg-gray-900 border border-gray-700 focus:border-green-500 text-white rounded-lg px-4 py-3 mb-6 outline-none transition"
       />
-      <div className="flex gap-3 mb-10">
+      <div className="flex flex-wrap gap-3 mb-10">
         {categories.map(cat => (
           <button
             key={cat}
             onClick={() => setActiveCategory(cat)}
-            className={`px-5 py-2 rounded-lg font-bold transition border ${
+            className={`px-4 py-2 rounded-lg font-bold transition border text-sm ${
               activeCategory === cat
                 ? 'bg-green-500 text-black border-green-500'
                 : 'bg-gray-900 text-gray-300 border-gray-700 hover:border-green-500'
@@ -140,7 +140,7 @@ function Shop() {
           <p className="text-gray-400 text-xl">No items found</p>
         </div>
       ) : (
-        <div className="grid grid-cols-3 gap-6">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
           {filtered.map(item => (
             <ItemCard key={item.id} item={item} />
           ))}
