@@ -119,7 +119,7 @@ function Home() {
             color: 'rgb(134,239,172)',
             background: 'rgba(74,222,128,0.05)'
           }}>
-          🌿 Roblox & Adopt Me Store
+         Roblox & Adopt Me Store
         </div>
 
         {/* Hero */}

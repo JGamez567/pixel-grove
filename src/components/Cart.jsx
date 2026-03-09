@@ -12,7 +12,7 @@ function Cart() {
       return
     }
     try {
-      const response = await fetch('http://localhost:4000/create-checkout-session', {
+      const response = await fetch('pixel-grove-production.up.railway.app', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ items: cart, username })
