@@ -29,7 +29,7 @@ function Navbar() {
             )}
           </Link>
           <a
-            href="YOUR_DISCORD_INVITE_LINK"
+            href="https://discord.gg/yZHbUFTh"
             target="_blank"
             rel="noopener noreferrer"
             className="bg-indigo-600 hover:bg-indigo-500 text-white font-bold px-4 py-2 rounded-lg transition flex items-center gap-2">
@@ -63,7 +63,7 @@ function Navbar() {
           <Link to="/about" onClick={() => setMenuOpen(false)} className="text-gray-300 hover:text-green-400 transition">About</Link>
           <Link to="/reviews" onClick={() => setMenuOpen(false)} className="text-gray-300 hover:text-green-400 transition">Reviews</Link>
           <a
-            href="YOUR_DISCORD_INVITE_LINK"
+            href="https://discord.gg/yZHbUFTh"
             target="_blank"
             rel="noopener noreferrer"
             className="bg-indigo-600 hover:bg-indigo-500 text-white font-bold px-4 py-2 rounded-lg transition flex items-center gap-2 w-fit">
