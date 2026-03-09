@@ -4,115 +4,209 @@ import { supabase } from '../supabase'
 
 const categories = ['All', 'Adopt Me Pet', 'Egg', 'Roblox Item']
 
-function ItemCard({ item }) {
-  const { addToCart } = useCart()
-  const [selected, setSelected] = useState('Normal')
+const TYPE_STYLES = {
+  Normal: { label: 'Normal', color: '#9ca3af', active: '#e5e7eb', glow: 'rgba(229,231,235,0.3)' },
+  Neon:   { label: 'Neon',   color: '#4ade80', active: '#4ade80', glow: 'rgba(74,222,128,0.4)' },
+  Mega:   { label: 'Mega',   color: '#c084fc', active: '#c084fc', glow: 'rgba(192,132,252,0.4)' },
+}
+
+const POTION_STYLES = {
+  'No Pot':   { label: 'No Pot',   color: '#9ca3af' },
+  'Fly':      { label: '✈ Fly',    color: '#60a5fa' },
+  'Ride':     { label: '🔴 Ride',  color: '#f87171' },
+  'Fly-Ride': { label: '✈🔴 FR',  color: '#f59e0b' },
+}
+
+function Badge({ type, potion }) {
+  return (
+    <div className="flex gap-1 flex-wrap">
+      {type === 'Neon' && (
+        <span className="text-xs font-black px-1.5 py-0.5 rounded-md"
+          style={{ background: 'rgba(74,222,128,0.15)', color: '#4ade80', border: '1px solid rgba(74,222,128,0.3)' }}>N</span>
+      )}
+      {type === 'Mega' && (
+        <span className="text-xs font-black px-1.5 py-0.5 rounded-md"
+          style={{ background: 'rgba(192,132,252,0.15)', color: '#c084fc', border: '1px solid rgba(192,132,252,0.3)' }}>M</span>
+      )}
+      {(potion === 'Fly' || potion === 'Fly-Ride') && (
+        <span className="text-xs font-black px-1.5 py-0.5 rounded-md"
+          style={{ background: 'rgba(96,165,250,0.15)', color: '#60a5fa', border: '1px solid rgba(96,165,250,0.3)' }}>F</span>
+      )}
+      {(potion === 'Ride' || potion === 'Fly-Ride') && (
+        <span className="text-xs font-black px-1.5 py-0.5 rounded-md"
+          style={{ background: 'rgba(248,113,113,0.15)', color: '#f87171', border: '1px solid rgba(248,113,113,0.3)' }}>R</span>
+      )}
+    </div>
+  )
+}
+
+function StockLabel({ stock }) {
+  if (stock === null || stock === undefined) return null
+  if (stock <= 0) return (
+    <span className="text-xs font-bold" style={{ color: '#f87171' }}>Sold Out</span>
+  )
+  if (stock === 1) return (
+    <span className="text-xs font-bold" style={{ color: '#fbbf24' }}>⚠ Only 1 left!</span>
+  )
+  if (stock <= 3) return (
+    <span className="text-xs font-bold" style={{ color: '#fb923c' }}>{stock} in stock</span>
+  )
+  return (
+    <span className="text-xs font-bold" style={{ color: 'rgba(74,222,128,0.5)' }}>{stock} in stock</span>
+  )
+}
+
+function PetCard({ petName, combos }) {
+  const { addToCart, cart } = useCart()
   const [hovered, setHovered] = useState(false)
 
-  if (!item.has_variants) {
-    const soldOut = item.normal_stock === null || item.normal_stock <= 0
-    return (
-      <div
-        onMouseEnter={() => setHovered(true)}
-        onMouseLeave={() => setHovered(false)}
-        className="rounded-2xl p-6 transition-all duration-300"
-        style={{
-          background: 'rgba(255,255,255,0.02)',
-          border: hovered ? '1px solid rgba(74,222,128,0.4)' : '1px solid rgba(74,222,128,0.08)',
-          boxShadow: hovered ? '0 0 30px rgba(74,222,128,0.06)' : 'none',
-          transform: hovered ? 'translateY(-4px)' : 'translateY(0)',
-        }}>
-        <div className="rounded-xl p-4 mb-4 flex items-center justify-center h-40"
-          style={{ background: 'rgba(255,255,255,0.03)' }}>
-          <img src={item.image_url} alt={item.name} className="h-full object-contain" />
-        </div>
-        <h3 className="text-white font-bold text-lg mb-1">{item.name}</h3>
-        <p className="text-xs font-bold mb-4 tracking-wider uppercase"
-          style={{ color: 'rgba(74,222,128,0.6)' }}>{item.category}</p>
-        <div className="flex justify-between items-center mt-4">
-          <span className="font-bold text-xl"
-            style={{ background: 'linear-gradient(135deg, #4ade80, #86efac)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-            ${item.normal_price}
-          </span>
-          {soldOut ? (
-            <span className="text-xs font-bold px-3 py-1.5 rounded-lg"
-              style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', color: '#f87171' }}>
-              Sold Out
-            </span>
-          ) : (
-            <button
-              onClick={() => addToCart(item, 'Normal', item.normal_price)}
-              className="text-black font-bold px-4 py-2 rounded-lg text-sm transition-all hover:scale-105"
-              style={{ background: 'linear-gradient(135deg, #4ade80, #22c55e)', boxShadow: '0 0 12px rgba(74,222,128,0.2)' }}>
-              Add to Cart
-            </button>
-          )}
-        </div>
-      </div>
-    )
+  const availableTypes = [...new Set(combos.map(c => c.type))]
+  const availablePotions = [...new Set(combos.map(c => c.potion))]
+
+  const bestCombo = [...combos].sort((a, b) => (b.stock || 0) - (a.stock || 0))[0]
+  const [selectedType, setSelectedType] = useState(bestCombo.type)
+  const [selectedPotion, setSelectedPotion] = useState(bestCombo.potion)
+
+  const isRobloxItem = combos[0].category === 'Roblox Item'
+
+  const currentCombo = combos.find(c => c.type === selectedType && c.potion === selectedPotion)
+    || combos.find(c => c.type === selectedType)
+    || bestCombo
+
+  const soldOut = !currentCombo || currentCombo.stock === null || currentCombo.stock <= 0
+
+  const cartItem = cart.find(c => c.id === currentCombo?.id)
+  const cartQty = cartItem ? cartItem.quantity : 0
+  const canAdd = currentCombo && currentCombo.stock > cartQty
+
+  function handleTypeSelect(type) {
+    setSelectedType(type)
+    const comboWithSamePotion = combos.find(c => c.type === type && c.potion === selectedPotion)
+    if (!comboWithSamePotion) {
+      const bestForType = [...combos.filter(c => c.type === type)].sort((a, b) => (b.stock || 0) - (a.stock || 0))[0]
+      if (bestForType) setSelectedPotion(bestForType.potion)
+    }
   }
 
-  const variants = {
-    Normal: { price: item.normal_price, stock: item.normal_stock },
-    Neon: { price: item.neon_price, stock: item.neon_stock },
-    Mega: { price: item.mega_price, stock: item.mega_stock },
+  function handleAddToCart() {
+    if (!canAdd) return
+    if (currentCombo.stock <= cartQty) {
+      alert(`Only ${currentCombo.stock} in stock!`)
+      return
+    }
+    addToCart(currentCombo, `${currentCombo.type} ${currentCombo.potion}`, currentCombo.price)
   }
 
-  const variant = variants[selected]
-  const soldOut = variant.stock === null || variant.stock <= 0
+  const typeStyle = TYPE_STYLES[selectedType] || TYPE_STYLES.Normal
 
   return (
     <div
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
-      className="rounded-2xl p-6 transition-all duration-300"
+      className="rounded-2xl p-5 transition-all duration-300 flex flex-col"
       style={{
         background: 'rgba(255,255,255,0.02)',
-        border: hovered ? '1px solid rgba(74,222,128,0.4)' : '1px solid rgba(74,222,128,0.08)',
-        boxShadow: hovered ? '0 0 30px rgba(74,222,128,0.06)' : 'none',
+        border: hovered ? `1px solid ${typeStyle.active}40` : '1px solid rgba(74,222,128,0.08)',
+        boxShadow: hovered ? `0 0 30px ${typeStyle.glow || 'rgba(74,222,128,0.06)'}` : 'none',
         transform: hovered ? 'translateY(-4px)' : 'translateY(0)',
       }}>
-      <div className="rounded-xl p-4 mb-4 flex items-center justify-center h-40"
+
+      {/* Image */}
+      <div className="rounded-xl p-3 mb-4 flex items-center justify-center h-36 relative"
         style={{ background: 'rgba(255,255,255,0.03)' }}>
-        <img src={item.image_url} alt={item.name} className="h-full object-contain" />
+        <img src={combos[0].image_url} alt={petName} className="h-full object-contain" />
+        <div className="absolute top-2 right-2">
+          <Badge type={selectedType} potion={selectedPotion} />
+        </div>
       </div>
-      <h3 className="text-white font-bold text-lg mb-1">{item.name}</h3>
-      <p className="text-xs font-bold mb-4 tracking-wider uppercase"
-        style={{ color: 'rgba(74,222,128,0.6)' }}>{item.category}</p>
-      <div className="flex gap-2 mb-4">
-        {Object.keys(variants).map(v => (
-          <button
-            key={v}
-            onClick={() => setSelected(v)}
-            className="flex-1 py-1.5 rounded-lg text-xs font-bold transition-all"
-            style={selected === v ? {
-              background: 'linear-gradient(135deg, #4ade80, #22c55e)',
-              color: '#000',
-              border: '1px solid transparent',
-              boxShadow: '0 0 10px rgba(74,222,128,0.3)'
-            } : {
-              background: 'rgba(255,255,255,0.03)',
-              color: '#9ca3af',
-              border: '1px solid rgba(74,222,128,0.15)'
-            }}>
-            {v}
-          </button>
-        ))}
-      </div>
-      <div className="flex justify-between items-center">
-        <span className="font-bold text-xl"
-          style={{ background: 'linear-gradient(135deg, #4ade80, #86efac)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-          ${variant.price}
-        </span>
-        {soldOut ? (
-          <span className="text-xs font-bold px-3 py-1.5 rounded-lg"
-            style={{ background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', color: '#f87171' }}>
-            Sold Out
+
+      {/* Name */}
+      <h3 className="text-white font-bold text-base mb-0.5">{petName}</h3>
+      <p className="text-xs font-bold mb-3 tracking-wider uppercase"
+        style={{ color: 'rgba(74,222,128,0.5)' }}>{combos[0].category}</p>
+
+      {/* Type buttons */}
+      {!isRobloxItem && availableTypes.length > 1 && (
+        <div className="flex gap-1.5 mb-2">
+          {['Normal', 'Neon', 'Mega'].filter(t => availableTypes.includes(t)).map(t => {
+            const ts = TYPE_STYLES[t]
+            const isActive = selectedType === t
+            return (
+              <button key={t}
+                onClick={() => handleTypeSelect(t)}
+                className="flex-1 py-1.5 rounded-lg text-xs font-bold transition-all"
+                style={isActive ? {
+                  background: t === 'Mega'
+                    ? 'linear-gradient(135deg, #c084fc, #a855f7)'
+                    : 'linear-gradient(135deg, #4ade80, #22c55e)',
+                  color: '#000',
+                  boxShadow: `0 0 10px ${ts.glow}`
+                } : {
+                  background: 'rgba(255,255,255,0.03)',
+                  color: '#6b7280',
+                  border: '1px solid rgba(255,255,255,0.08)'
+                }}>
+                {t}
+              </button>
+            )
+          })}
+        </div>
+      )}
+
+      {/* Potion buttons */}
+      {!isRobloxItem && availablePotions.length > 1 && (
+        <div className="flex gap-1.5 mb-3">
+          {['No Pot', 'Fly', 'Ride', 'Fly-Ride'].filter(p => availablePotions.includes(p)).map(p => {
+            const ps = POTION_STYLES[p]
+            const isActive = selectedPotion === p
+            const comboExists = combos.find(c => c.type === selectedType && c.potion === p)
+            return (
+              <button key={p}
+                onClick={() => comboExists && setSelectedPotion(p)}
+                className="flex-1 py-1.5 rounded-lg text-xs font-bold transition-all"
+                style={isActive ? {
+                  background: 'rgba(255,255,255,0.1)',
+                  color: ps.color,
+                  border: `1px solid ${ps.color}60`,
+                  boxShadow: `0 0 8px ${ps.color}30`
+                } : {
+                  background: 'rgba(255,255,255,0.02)',
+                  color: comboExists ? '#6b7280' : '#374151',
+                  border: '1px solid rgba(255,255,255,0.05)',
+                  opacity: comboExists ? 1 : 0.4,
+                  cursor: comboExists ? 'pointer' : 'not-allowed'
+                }}>
+                {ps.label}
+              </button>
+            )
+          })}
+        </div>
+      )}
+
+      {/* Price + stock + button */}
+      <div className="mt-auto pt-2">
+        <div className="flex justify-between items-center mb-2">
+          <span className="font-bold text-xl"
+            style={{ background: 'linear-gradient(135deg, #4ade80, #86efac)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+            {currentCombo ? `$${currentCombo.price}` : 'N/A'}
           </span>
+          <StockLabel stock={currentCombo?.stock} />
+        </div>
+
+        {soldOut ? (
+          <div className="w-full text-center text-xs font-bold py-2.5 rounded-xl"
+            style={{ background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', color: '#f87171' }}>
+            Sold Out
+          </div>
+        ) : !canAdd ? (
+          <div className="w-full text-center text-xs font-bold py-2.5 rounded-xl"
+            style={{ background: 'rgba(251,191,36,0.08)', border: '1px solid rgba(251,191,36,0.2)', color: '#fbbf24' }}>
+            Max in cart
+          </div>
         ) : (
           <button
-            onClick={() => addToCart(item, selected, variant.price)}
-            className="text-black font-bold px-4 py-2 rounded-lg text-sm transition-all hover:scale-105"
+            onClick={handleAddToCart}
+            className="w-full text-black font-bold py-2.5 rounded-xl text-sm transition-all hover:scale-105"
             style={{ background: 'linear-gradient(135deg, #4ade80, #22c55e)', boxShadow: '0 0 12px rgba(74,222,128,0.2)' }}>
             Add to Cart
           </button>
@@ -134,15 +228,21 @@ function Shop() {
     async function fetchItems() {
       const { data, error } = await supabase.from('items').select('*')
       if (error) console.error(error)
-      else setItems(data)
+      else setItems(data || [])
       setLoading(false)
     }
     fetchItems()
   }, [])
 
-  const filtered = items.filter(item => {
-    const matchesSearch = item.name.toLowerCase().includes(search.toLowerCase())
-    const matchesCategory = activeCategory === 'All' || item.category === activeCategory
+  const grouped = items.reduce((acc, item) => {
+    if (!acc[item.name]) acc[item.name] = []
+    acc[item.name].push(item)
+    return acc
+  }, {})
+
+  const filteredGroups = Object.entries(grouped).filter(([name, combos]) => {
+    const matchesSearch = name.toLowerCase().includes(search.toLowerCase())
+    const matchesCategory = activeCategory === 'All' || combos[0].category === activeCategory
     return matchesSearch && matchesCategory
   })
 
@@ -150,8 +250,7 @@ function Shop() {
     <div className="min-h-screen bg-gray-950 flex items-center justify-center">
       <div className="text-center">
         <div className="text-4xl mb-4">🌿</div>
-        <p className="font-bold tracking-widest uppercase text-sm"
-          style={{ color: '#4ade80' }}>Loading items...</p>
+        <p className="font-bold tracking-widest uppercase text-sm" style={{ color: '#4ade80' }}>Loading items...</p>
       </div>
     </div>
   )
@@ -183,17 +282,12 @@ function Shop() {
           value={search}
           onChange={e => setSearch(e.target.value)}
           className="w-full text-white rounded-xl px-5 py-4 mb-6 outline-none transition"
-          style={{
-            background: 'rgba(255,255,255,0.03)',
-            border: '1px solid rgba(74,222,128,0.15)',
-          }}
+          style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(74,222,128,0.15)' }}
         />
 
         <div className="flex flex-wrap gap-2 mb-10">
           {categories.map(cat => (
-            <button
-              key={cat}
-              onClick={() => setActiveCategory(cat)}
+            <button key={cat} onClick={() => setActiveCategory(cat)}
               className="px-4 py-2 rounded-xl font-bold text-sm transition-all"
               style={activeCategory === cat ? {
                 background: 'linear-gradient(135deg, #4ade80, #22c55e)',
@@ -209,15 +303,15 @@ function Shop() {
           ))}
         </div>
 
-        {filtered.length === 0 ? (
+        {filteredGroups.length === 0 ? (
           <div className="text-center py-32">
             <div className="text-5xl mb-4">🔍</div>
             <p className="text-gray-500 text-xl">No items found</p>
           </div>
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
-            {filtered.map(item => (
-              <ItemCard key={item.id} item={item} />
+            {filteredGroups.map(([name, combos]) => (
+              <PetCard key={name} petName={name} combos={combos} />
             ))}
           </div>
         )}
