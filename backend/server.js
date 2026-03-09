@@ -17,6 +17,10 @@ app.use(cors({
 app.use('/webhook', express.raw({ type: 'application/json' }))
 app.use(express.json())
 
+app.get('/', (req, res) => {
+  res.json({ status: 'PixelGrove backend running!' })
+})
+
 app.post('/create-checkout-session', async (req, res) => {
   const { items, username } = req.body
 
@@ -35,8 +39,8 @@ app.post('/create-checkout-session', async (req, res) => {
     payment_method_types: ['card'],
     line_items: lineItems,
     mode: 'payment',
-    success_url: 'http://localhost:5173/success',
-    cancel_url: 'http://localhost:5173/cart',
+    success_url: 'https://pixel-grove.vercel.app/success',
+    cancel_url: 'https://pixel-grove.vercel.app/cart',
     metadata: {
       username,
       cart: JSON.stringify(items.map(i => ({
@@ -66,7 +70,6 @@ app.post('/webhook', express.raw({ type: 'application/json' }), async (req, res)
     const { username, cart } = session.metadata
     const cartItems = JSON.parse(cart)
 
-    // Save order
     const { error } = await supabase.from('orders').insert({
       username,
       items: cartItems.map(i => `${i.name} (${i.variant}) x${i.quantity}`).join(', '),
@@ -77,7 +80,6 @@ app.post('/webhook', express.raw({ type: 'application/json' }), async (req, res)
     if (error) console.error('Supabase error:', error)
     else console.log(`Order saved for ${username}`)
 
-    // Reduce stock for each item
     for (const item of cartItems) {
       const variantColumn = `${item.variant.toLowerCase()}_stock`
 
