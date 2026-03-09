@@ -10,7 +10,9 @@ const supabase = createClient(
 )
 
 const app = express()
-app.use(cors())
+app.use(cors({
+  origin: ['https://pixel-grove.vercel.app', 'http://localhost:5173']
+}))
 
 app.use('/webhook', express.raw({ type: 'application/json' }))
 app.use(express.json())
