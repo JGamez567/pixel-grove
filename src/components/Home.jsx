@@ -176,7 +176,7 @@ function Home() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {[
               { icon: '🤝', title: 'Personal Trading', desc: 'We personally trade every order — no bots, just real people' },
-              { icon: '⏰', title: 'Guaranteed delivery within 24 hours', desc: 'We deliver daily between 12AM – 2AM CST.If you order outside of these hours, no worries — your item will be on its way the next delivery window!' },
+              { icon: '⏰', title: 'Guaranteed delivery within 24 hours', desc: 'We deliver daily between 12PM – 2AM CST.If you order outside of these hours, no worries — your item will be on its way the next delivery window!' },
               { icon: '🔒', title: 'Safe & Secure', desc: 'Secure Stripe payments and trusted by our growing community' },
             ].map((card, i) => (
               <div key={i}
