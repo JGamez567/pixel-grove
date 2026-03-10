@@ -3,7 +3,7 @@ import { useSearchParams } from 'react-router-dom'
 import { useCart } from './CartContext'
 import { supabase } from '../supabase'
 
-const categories = ['All', 'Adopt Me Pet', 'Egg', 'Roblox Item']
+const categories = ['All', 'Adopt Me Pet', 'Egg', 'Roblox Item','Pet Wear']
 
 const TYPE_STYLES = {
   Normal: { label: 'Normal', color: '#9ca3af', active: '#e5e7eb', glow: 'rgba(229,231,235,0.3)' },
