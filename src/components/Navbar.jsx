@@ -31,7 +31,7 @@ function Navbar() {
             )}
           </Link>
           <a
-            href="https://discord.gg/yZHbUFTh"
+            href="https://discord.gg/B6tghWX5mz"
             target="_blank"
             rel="noopener noreferrer"
             className="bg-indigo-600 hover:bg-indigo-500 text-white font-bold px-4 py-2 rounded-lg transition flex items-center gap-2">

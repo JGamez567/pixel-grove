@@ -20,7 +20,7 @@ function Socials() {
       color: '#818cf8',
       glow: 'rgba(129,140,248,0.15)',
       border: 'rgba(129,140,248,0.2)',
-      href: 'https://discord.gg/yZHbUFTh',
+      href: 'https://discord.gg/B6tghWX5mz',
       btnLabel: 'Join Discord',
       btnColor: 'linear-gradient(135deg, #818cf8, #6366f1)',
     },
