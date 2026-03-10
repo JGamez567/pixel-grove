@@ -7,8 +7,8 @@ import Cart from './components/Cart'
 import About from './components/About'
 import Success from './components/Success'
 import Reviews from './components/Reviews'
-
-
+import HowItWorks from './components/HowItWorks'
+import Socials from './components/Socials'
 
 function App() {
   return (
@@ -21,9 +21,10 @@ function App() {
             <Route path="/shop" element={<Shop />} />
             <Route path="/cart" element={<Cart />} />
             <Route path="/about" element={<About />} />
-            <Route path="/about" element={<About />} />
             <Route path="/success" element={<Success />} />
             <Route path="/reviews" element={<Reviews />} />
+            <Route path="/how-it-works" element={<HowItWorks />} />
+            <Route path="/socials" element={<Socials />} />
           </Routes>
         </div>
       </CartProvider>
