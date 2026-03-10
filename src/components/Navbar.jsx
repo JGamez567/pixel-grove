@@ -15,11 +15,13 @@ function Navbar() {
         </h1>
 
         {/* Desktop Links */}
-        <div className="hidden md:flex gap-8 items-center">
+        <div className="hidden md:flex gap-6 items-center">
           <Link to="/" className="text-gray-300 hover:text-green-400 transition">Home</Link>
           <Link to="/shop" className="text-gray-300 hover:text-green-400 transition">Shop</Link>
-          <Link to="/about" className="text-gray-300 hover:text-green-400 transition">About</Link>
+          <Link to="/how-it-works" className="text-gray-300 hover:text-green-400 transition">How It Works</Link>
+          <Link to="/socials" className="text-gray-300 hover:text-green-400 transition">Socials</Link>
           <Link to="/reviews" className="text-gray-300 hover:text-green-400 transition">Reviews</Link>
+          <Link to="/about" className="text-gray-300 hover:text-green-400 transition">About</Link>
           <Link to="/cart" className="relative text-gray-300 hover:text-green-400 transition">
             🛒 Cart
             {itemCount > 0 && (
@@ -60,8 +62,10 @@ function Navbar() {
         <div className="md:hidden flex flex-col gap-4 pt-4 pb-2 border-t border-gray-800 mt-4">
           <Link to="/" onClick={() => setMenuOpen(false)} className="text-gray-300 hover:text-green-400 transition">Home</Link>
           <Link to="/shop" onClick={() => setMenuOpen(false)} className="text-gray-300 hover:text-green-400 transition">Shop</Link>
-          <Link to="/about" onClick={() => setMenuOpen(false)} className="text-gray-300 hover:text-green-400 transition">About</Link>
+          <Link to="/how-it-works" onClick={() => setMenuOpen(false)} className="text-gray-300 hover:text-green-400 transition">How It Works</Link>
+          <Link to="/socials" onClick={() => setMenuOpen(false)} className="text-gray-300 hover:text-green-400 transition">Socials</Link>
           <Link to="/reviews" onClick={() => setMenuOpen(false)} className="text-gray-300 hover:text-green-400 transition">Reviews</Link>
+          <Link to="/about" onClick={() => setMenuOpen(false)} className="text-gray-300 hover:text-green-400 transition">About</Link>
           <a
             href="https://discord.gg/yZHbUFTh"
             target="_blank"
