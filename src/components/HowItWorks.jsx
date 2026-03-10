@@ -18,7 +18,7 @@ function HowItWorks() {
     {
       icon: '🎮',
       title: 'We Deliver In Game',
-      desc: 'Once payment is confirmed, we\'ll join your Adopt Me server and trade you your items directly. Simple and easy!'
+      desc: 'Once payment is confirmed, we\'ll add your roblox account you provided and join your Adopt Me server. Simple and easy!'
     },
   ]
 

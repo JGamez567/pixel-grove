@@ -12,13 +12,14 @@ const supabase = createClient(
 const app = express()
 app.use(cors({
   origin: function(origin, callback) {
-    if (!origin || origin.includes('vercel.app') || origin.includes('localhost')) {
+    if (!origin || origin.includes('vercel.app') || origin.includes('localhost') || origin.includes('thepixelgrove.shop')) {
       callback(null, true)
     } else {
       callback(new Error('Not allowed by CORS'))
     }
   }
 }))
+
 app.use('/webhook', express.raw({ type: 'application/json' }))
 app.use(express.json())
 
@@ -44,8 +45,8 @@ app.post('/create-checkout-session', async (req, res) => {
     payment_method_types: ['card'],
     line_items: lineItems,
     mode: 'payment',
-    success_url: 'https://pixel-grove.vercel.app/success',
-    cancel_url: 'https://pixel-grove.vercel.app/cart',
+    success_url: 'https://thepixelgrove.shop/success',
+    cancel_url: 'https://thepixelgrove.shop/cart',
     metadata: {
       username,
       cart: JSON.stringify(items.map(i => ({
@@ -78,7 +79,6 @@ app.post('/webhook', express.raw({ type: 'application/json' }), async (req, res)
     const { username, cart } = session.metadata
     const cartItems = JSON.parse(cart)
 
-    // Save order
     const { error } = await supabase.from('orders').insert({
       username,
       items: cartItems.map(i => `${i.name} (${i.variant}) x${i.quantity}`).join(', '),
@@ -89,7 +89,6 @@ app.post('/webhook', express.raw({ type: 'application/json' }), async (req, res)
     if (error) console.error('Supabase error:', error)
     else console.log(`Order saved for ${username}`)
 
-    // Reduce stock using id for exact row match
     for (const item of cartItems) {
       const { data: currentItem } = await supabase
         .from('items')
