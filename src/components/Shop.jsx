@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { useCart } from './CartContext'
 import { supabase } from '../supabase'
 
@@ -42,18 +43,10 @@ function Badge({ type, potion }) {
 
 function StockLabel({ stock }) {
   if (stock === null || stock === undefined) return null
-  if (stock <= 0) return (
-    <span className="text-xs font-bold" style={{ color: '#f87171' }}>Sold Out</span>
-  )
-  if (stock === 1) return (
-    <span className="text-xs font-bold" style={{ color: '#fbbf24' }}>⚠ Only 1 left!</span>
-  )
-  if (stock <= 3) return (
-    <span className="text-xs font-bold" style={{ color: '#fb923c' }}>{stock} in stock</span>
-  )
-  return (
-    <span className="text-xs font-bold" style={{ color: 'rgba(74,222,128,0.5)' }}>{stock} in stock</span>
-  )
+  if (stock <= 0) return <span className="text-xs font-bold" style={{ color: '#f87171' }}>Sold Out</span>
+  if (stock === 1) return <span className="text-xs font-bold" style={{ color: '#fbbf24' }}>⚠ Only 1 left!</span>
+  if (stock <= 3) return <span className="text-xs font-bold" style={{ color: '#fb923c' }}>{stock} in stock</span>
+  return <span className="text-xs font-bold" style={{ color: 'rgba(74,222,128,0.5)' }}>{stock} in stock</span>
 }
 
 function PetCard({ petName, combos }) {
@@ -74,7 +67,6 @@ function PetCard({ petName, combos }) {
     || bestCombo
 
   const soldOut = !currentCombo || currentCombo.stock === null || currentCombo.stock <= 0
-
   const cartItem = cart.find(c => c.id === currentCombo?.id)
   const cartQty = cartItem ? cartItem.quantity : 0
   const canAdd = currentCombo && currentCombo.stock > cartQty
@@ -111,7 +103,6 @@ function PetCard({ petName, combos }) {
         transform: hovered ? 'translateY(-4px)' : 'translateY(0)',
       }}>
 
-      {/* Image */}
       <div className="rounded-xl p-3 mb-4 flex items-center justify-center h-36 relative"
         style={{ background: 'rgba(255,255,255,0.03)' }}>
         <img src={combos[0].image_url} alt={petName} className="h-full object-contain" />
@@ -120,25 +111,20 @@ function PetCard({ petName, combos }) {
         </div>
       </div>
 
-      {/* Name */}
       <h3 className="text-white font-bold text-base mb-0.5">{petName}</h3>
       <p className="text-xs font-bold mb-3 tracking-wider uppercase"
         style={{ color: 'rgba(74,222,128,0.5)' }}>{combos[0].category}</p>
 
-      {/* Type buttons */}
       {!isRobloxItem && availableTypes.length > 1 && (
         <div className="flex gap-1.5 mb-2">
           {['Normal', 'Neon', 'Mega'].filter(t => availableTypes.includes(t)).map(t => {
             const ts = TYPE_STYLES[t]
             const isActive = selectedType === t
             return (
-              <button key={t}
-                onClick={() => handleTypeSelect(t)}
+              <button key={t} onClick={() => handleTypeSelect(t)}
                 className="flex-1 py-1.5 rounded-lg text-xs font-bold transition-all"
                 style={isActive ? {
-                  background: t === 'Mega'
-                    ? 'linear-gradient(135deg, #c084fc, #a855f7)'
-                    : 'linear-gradient(135deg, #4ade80, #22c55e)',
+                  background: t === 'Mega' ? 'linear-gradient(135deg, #c084fc, #a855f7)' : 'linear-gradient(135deg, #4ade80, #22c55e)',
                   color: '#000',
                   boxShadow: `0 0 10px ${ts.glow}`
                 } : {
@@ -153,7 +139,6 @@ function PetCard({ petName, combos }) {
         </div>
       )}
 
-      {/* Potion buttons */}
       {!isRobloxItem && availablePotions.length > 1 && (
         <div className="flex gap-1.5 mb-3">
           {['No Pot', 'Fly', 'Ride', 'Fly-Ride'].filter(p => availablePotions.includes(p)).map(p => {
@@ -161,8 +146,7 @@ function PetCard({ petName, combos }) {
             const isActive = selectedPotion === p
             const comboExists = combos.find(c => c.type === selectedType && c.potion === p)
             return (
-              <button key={p}
-                onClick={() => comboExists && setSelectedPotion(p)}
+              <button key={p} onClick={() => comboExists && setSelectedPotion(p)}
                 className="flex-1 py-1.5 rounded-lg text-xs font-bold transition-all"
                 style={isActive ? {
                   background: 'rgba(255,255,255,0.1)',
@@ -183,7 +167,6 @@ function PetCard({ petName, combos }) {
         </div>
       )}
 
-      {/* Price + stock + button */}
       <div className="mt-auto pt-2">
         <div className="flex justify-between items-center mb-2">
           <span className="font-bold text-xl"
@@ -204,8 +187,7 @@ function PetCard({ petName, combos }) {
             Max in cart
           </div>
         ) : (
-          <button
-            onClick={handleAddToCart}
+          <button onClick={handleAddToCart}
             className="w-full text-black font-bold py-2.5 rounded-xl text-sm transition-all hover:scale-105"
             style={{ background: 'linear-gradient(135deg, #4ade80, #22c55e)', boxShadow: '0 0 12px rgba(74,222,128,0.2)' }}>
             Add to Cart
@@ -220,8 +202,22 @@ function Shop() {
   const [items, setItems] = useState([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
-  const [activeCategory, setActiveCategory] = useState('All')
   const [visible, setVisible] = useState(false)
+  const [searchParams] = useSearchParams()
+
+  const [activeCategory, setActiveCategory] = useState(() => {
+    const filter = searchParams.get('filter')
+    if (filter === 'Egg') return 'Egg'
+    if (filter === 'Roblox Item') return 'Roblox Item'
+    if (filter === 'Mega' || filter === 'Neon' || filter === 'Normal') return 'Adopt Me Pet'
+    return 'All'
+  })
+
+  const [activeType, setActiveType] = useState(() => {
+    const filter = searchParams.get('filter')
+    if (filter === 'Mega' || filter === 'Neon' || filter === 'Normal') return filter
+    return null
+  })
 
   useEffect(() => {
     setTimeout(() => setVisible(true), 100)
@@ -243,7 +239,8 @@ function Shop() {
   const filteredGroups = Object.entries(grouped).filter(([name, combos]) => {
     const matchesSearch = name.toLowerCase().includes(search.toLowerCase())
     const matchesCategory = activeCategory === 'All' || combos[0].category === activeCategory
-    return matchesSearch && matchesCategory
+    const matchesType = !activeType || combos.some(c => c.type === activeType)
+    return matchesSearch && matchesCategory && matchesType
   })
 
   if (loading) return (
@@ -261,13 +258,8 @@ function Shop() {
         style={{ background: 'radial-gradient(ellipse at 50% 0%, rgba(74,222,128,0.04) 0%, transparent 60%)', zIndex: 0 }} />
 
       <div className="relative px-4 md:px-8 py-16 max-w-6xl mx-auto" style={{ zIndex: 1 }}>
-        <div style={{
-          opacity: visible ? 1 : 0,
-          transform: visible ? 'translateY(0)' : 'translateY(20px)',
-          transition: 'all 0.6s ease'
-        }}>
-          <div className="mb-2 text-xs font-bold tracking-widest uppercase"
-            style={{ color: 'rgba(74,222,128,0.6)' }}>🌿 PixelGrove Store</div>
+        <div style={{ opacity: visible ? 1 : 0, transform: visible ? 'translateY(0)' : 'translateY(20px)', transition: 'all 0.6s ease' }}>
+          <div className="mb-2 text-xs font-bold tracking-widest uppercase" style={{ color: 'rgba(74,222,128,0.6)' }}>🌿 PixelGrove Store</div>
           <h1 className="text-4xl md:text-6xl font-bold text-white mb-2">Browse <span style={{
             background: 'linear-gradient(135deg, #4ade80, #86efac)',
             WebkitBackgroundClip: 'text',
@@ -276,32 +268,46 @@ function Shop() {
           <p className="text-gray-500 mb-10">Find your perfect pet or item</p>
         </div>
 
-        <input
-          type="text"
-          placeholder="Search items..."
-          value={search}
+        <input type="text" placeholder="Search items..." value={search}
           onChange={e => setSearch(e.target.value)}
           className="w-full text-white rounded-xl px-5 py-4 mb-6 outline-none transition"
-          style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(74,222,128,0.15)' }}
-        />
+          style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(74,222,128,0.15)' }} />
 
-        <div className="flex flex-wrap gap-2 mb-10">
+        {/* Category filters */}
+        <div className="flex flex-wrap gap-2 mb-4">
           {categories.map(cat => (
-            <button key={cat} onClick={() => setActiveCategory(cat)}
+            <button key={cat} onClick={() => { setActiveCategory(cat); setActiveType(null) }}
               className="px-4 py-2 rounded-xl font-bold text-sm transition-all"
-              style={activeCategory === cat ? {
-                background: 'linear-gradient(135deg, #4ade80, #22c55e)',
-                color: '#000',
-                boxShadow: '0 0 15px rgba(74,222,128,0.3)'
+              style={activeCategory === cat && !activeType ? {
+                background: 'linear-gradient(135deg, #4ade80, #22c55e)', color: '#000', boxShadow: '0 0 15px rgba(74,222,128,0.3)'
               } : {
-                background: 'rgba(255,255,255,0.03)',
-                color: '#9ca3af',
-                border: '1px solid rgba(74,222,128,0.15)'
+                background: 'rgba(255,255,255,0.03)', color: '#9ca3af', border: '1px solid rgba(74,222,128,0.15)'
               }}>
               {cat}
             </button>
           ))}
         </div>
+
+        {/* Type filters - only show when Adopt Me Pet is selected */}
+        {(activeCategory === 'All' || activeCategory === 'Adopt Me Pet') && (
+          <div className="flex flex-wrap gap-2 mb-10">
+            {['Mega', 'Neon', 'Normal'].map(t => (
+              <button key={t} onClick={() => { setActiveType(activeType === t ? null : t); setActiveCategory('Adopt Me Pet') }}
+                className="px-4 py-2 rounded-xl font-bold text-sm transition-all"
+                style={activeType === t ? {
+                  background: t === 'Mega' ? 'linear-gradient(135deg, #c084fc, #a855f7)' : 'linear-gradient(135deg, #4ade80, #22c55e)',
+                  color: '#000',
+                  boxShadow: t === 'Mega' ? '0 0 15px rgba(192,132,252,0.3)' : '0 0 15px rgba(74,222,128,0.3)'
+                } : {
+                  background: 'rgba(255,255,255,0.03)', color: '#9ca3af', border: '1px solid rgba(74,222,128,0.15)'
+                }}>
+                {t === 'Mega' ? '🟣' : t === 'Neon' ? '🟢' : '⚪'} {t}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {!( activeCategory === 'All' || activeCategory === 'Adopt Me Pet') && <div className="mb-10" />}
 
         {filteredGroups.length === 0 ? (
           <div className="text-center py-32">
