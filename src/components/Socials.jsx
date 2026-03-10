@@ -8,7 +8,7 @@ function Socials() {
       color: '#f0abfc',
       glow: 'rgba(240,171,252,0.15)',
       border: 'rgba(240,171,252,0.2)',
-      href: 'https://www.tiktok.com/@thepixelgrove',
+      href: 'https://www.tiktok.com/@pixel.grove5',
       btnLabel: 'Follow on TikTok',
       btnColor: 'linear-gradient(135deg, #f0abfc, #c084fc)',
     },
