@@ -8,7 +8,7 @@ function Success() {
       <p className="text-gray-400 text-xl mb-2">Thank you for your purchase!</p>
       <p className="text-gray-400 mb-8 max-w-md">
         Your pet will be delivered to your Roblox account soon. 
-        Join the game and we'll trade it to you as fast as possible! 
+        Join our game and we'll trade it to you as fast as possible! 
       </p>
 
       <div className="bg-gray-900 border border-gray-800 rounded-xl p-8 mb-10 max-w-md w-full">
@@ -16,22 +16,22 @@ function Success() {
           <div className="flex items-center gap-4">
             <span className="text-3xl">⚡</span>
             <div className="text-left">
-              <h3 className="text-white font-bold">Fast Delivery</h3>
-              <p className="text-gray-400 text-sm">We'll deliver your pet as soon as possible</p>
+              <h3 className="text-white font-bold">Delivery Hours</h3>
+              <p className="text-gray-400 text-sm">Our delivery hours are at 12pm-2am CST.If you order outside that time frame we will ensure you get your pet the next day</p>
             </div>
           </div>
           <div className="flex items-center gap-4">
             <span className="text-3xl">🎮</span>
             <div className="text-left">
               <h3 className="text-white font-bold">How it works</h3>
-              <p className="text-gray-400 text-sm">Accept our friend request and we will join your game!</p>
+              <p className="text-gray-400 text-sm">Expect a friend request from sourpatchcookie109 and accept their friend request and then join our server!</p>
             </div>
           </div>
           <div className="flex items-center gap-4">
             <span className="text-3xl">❓</span>
             <div className="text-left">
               <h3 className="text-white font-bold">Need help?</h3>
-              <p className="text-gray-400 text-sm">Contact us by email or by joining our discord for any additional help!</p>
+              <p className="text-gray-400 text-sm">Contact us by email thepixelgrove1@gmail.com or by joining our discord for any additional help!</p>
             </div>
           </div>
         </div>
