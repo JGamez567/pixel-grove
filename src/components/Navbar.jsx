@@ -27,15 +27,16 @@ function Navbar() {
   const [moreOpen, setMoreOpen] = useState(false)
   const [mobileSearchOpen, setMobileSearchOpen] = useState(false)
   const [search, setSearch] = useState('')
+  const [mobileSearch, setMobileSearch] = useState('')
   const [suggestions, setSuggestions] = useState([])
+  const [mobileSuggestions, setMobileSuggestions] = useState([])
   const [showSuggestions, setShowSuggestions] = useState(false)
   const [allItems, setAllItems] = useState([])
   const shopRef = useRef(null)
   const moreRef = useRef(null)
-  const searchRef = useRef(null)
+  const desktopSearchRef = useRef(null)
   const navigate = useNavigate()
 
-  // Load all items once for suggestions
   useEffect(() => {
     async function fetchItems() {
       const { data } = await supabase.from('items').select('id, name, image_url, category, price, type, potion')
@@ -44,30 +45,37 @@ function Navbar() {
     fetchItems()
   }, [])
 
-  // Close dropdowns on outside click
   useEffect(() => {
     function handleClick(e) {
       if (shopRef.current && !shopRef.current.contains(e.target)) setShopOpen(false)
       if (moreRef.current && !moreRef.current.contains(e.target)) setMoreOpen(false)
-      if (searchRef.current && !searchRef.current.contains(e.target)) setShowSuggestions(false)
+      if (desktopSearchRef.current && !desktopSearchRef.current.contains(e.target)) setShowSuggestions(false)
     }
     document.addEventListener('mousedown', handleClick)
     return () => document.removeEventListener('mousedown', handleClick)
   }, [])
 
-  // Filter suggestions as user types
+  // Desktop suggestions
   useEffect(() => {
     if (!search.trim()) { setSuggestions([]); return }
     const q = search.toLowerCase()
-    // Group by name, get unique pet names with best image/price
     const seen = {}
     allItems.forEach(item => {
-      if (item.name.toLowerCase().includes(q)) {
-        if (!seen[item.name]) seen[item.name] = item
-      }
+      if (item.name.toLowerCase().includes(q) && !seen[item.name]) seen[item.name] = item
     })
     setSuggestions(Object.values(seen).slice(0, 6))
   }, [search, allItems])
+
+  // Mobile suggestions — completely separate
+  useEffect(() => {
+    if (!mobileSearch.trim()) { setMobileSuggestions([]); return }
+    const q = mobileSearch.toLowerCase()
+    const seen = {}
+    allItems.forEach(item => {
+      if (item.name.toLowerCase().includes(q) && !seen[item.name]) seen[item.name] = item
+    })
+    setMobileSuggestions(Object.values(seen).slice(0, 6))
+  }, [mobileSearch, allItems])
 
   function goToShop(filter) {
     setShopOpen(false)
@@ -81,6 +89,16 @@ function Navbar() {
       navigate(`/shop?search=${encodeURIComponent(search.trim())}`)
       setSearch('')
       setShowSuggestions(false)
+    }
+  }
+
+  function handleMobileSearch(e) {
+    e.preventDefault()
+    if (mobileSearch.trim()) {
+      navigate(`/shop?search=${encodeURIComponent(mobileSearch.trim())}`)
+      setMobileSearch('')
+      setMobileSuggestions([])
+      setMobileSearchOpen(false)
       setMenuOpen(false)
     }
   }
@@ -88,7 +106,15 @@ function Navbar() {
   function handleSuggestionClick(name) {
     navigate(`/shop?search=${encodeURIComponent(name)}`)
     setSearch('')
+    setSuggestions([])
     setShowSuggestions(false)
+  }
+
+  function handleMobileSuggestionClick(name) {
+    navigate(`/shop?search=${encodeURIComponent(name)}`)
+    setMobileSearch('')
+    setMobileSuggestions([])
+    setMobileSearchOpen(false)
     setMenuOpen(false)
   }
 
@@ -97,10 +123,11 @@ function Navbar() {
   return (
     <nav className="bg-gray-950 border-b border-green-500 px-6 py-4 relative" style={{ zIndex: 100 }}>
       <div className="flex justify-between items-center max-w-7xl mx-auto gap-4">
+
         <Link to="/" className="flex items-center gap-2 flex-shrink-0">
-  <img src="/PGLO.png" alt="PixelGrove" className="h-10 w-auto" />
-  <span className="text-green-400 text-xl font-bold tracking-widest">PixelGrove</span>
-</Link>
+          <img src="/PGLOGO.png" alt="PixelGrove" className="h-10 w-auto" />
+          <span className="text-green-400 text-xl font-bold tracking-widest">PixelGrove</span>
+        </Link>
 
         {/* Desktop Links */}
         <div className="hidden md:flex gap-5 items-center flex-1 justify-center">
@@ -150,8 +177,8 @@ function Navbar() {
             )}
           </div>
 
-          {/* Search bar with suggestions */}
-          <div className="relative flex-1 max-w-xs" ref={searchRef}>
+          {/* Desktop Search */}
+          <div className="relative flex-1 max-w-xs" ref={desktopSearchRef}>
             <form onSubmit={handleSearch}>
               <div className="relative">
                 <input type="text" placeholder="Search pets..."
@@ -163,13 +190,11 @@ function Navbar() {
                 <button type="submit" className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-green-400 transition">🔍</button>
               </div>
             </form>
-
-            {/* Suggestions dropdown */}
             {showSuggestions && suggestions.length > 0 && (
               <div className="absolute top-12 left-0 w-full rounded-xl shadow-2xl overflow-hidden" style={dropdownStyle}>
                 {suggestions.map(item => (
                   <button key={item.id} onClick={() => handleSuggestionClick(item.name)}
-                    className="w-full flex items-center gap-3 px-3 py-2.5 hover:bg-green-400 transition text-left"
+                    className="w-full flex items-center gap-3 px-3 py-2.5 transition text-left"
                     style={{ background: 'transparent' }}
                     onMouseEnter={e => e.currentTarget.style.background = 'rgba(74,222,128,0.08)'}
                     onMouseLeave={e => e.currentTarget.style.background = 'transparent'}>
@@ -191,7 +216,7 @@ function Navbar() {
           </div>
         </div>
 
-        {/* Right side */}
+        {/* Desktop Right */}
         <div className="hidden md:flex items-center gap-3 flex-shrink-0">
           <Link to="/cart" className="relative text-gray-300 hover:text-green-400 transition text-sm font-medium">
             🛒 Cart
@@ -209,7 +234,8 @@ function Navbar() {
 
         {/* Mobile Right Side */}
         <div className="flex md:hidden items-center gap-3">
-          <button onClick={() => { setMobileSearchOpen(!mobileSearchOpen); setMenuOpen(false) }}
+          <button
+            onClick={() => { setMobileSearchOpen(!mobileSearchOpen); setMenuOpen(false); setMobileSearch(''); setMobileSuggestions([]) }}
             className="text-gray-300 hover:text-green-400 transition text-xl">
             🔍
           </button>
@@ -229,21 +255,23 @@ function Navbar() {
 
       {/* Mobile Search Bar */}
       {mobileSearchOpen && (
-        <div className="md:hidden pt-3 pb-1 border-t border-gray-800 mt-3 max-w-7xl mx-auto" ref={searchRef}>
-          <form onSubmit={e => { handleSearch(e); setMobileSearchOpen(false) }} className="flex gap-2">
-            <input autoFocus type="text" placeholder="Search pets..." value={search}
-              onChange={e => { setSearch(e.target.value); setShowSuggestions(true) }}
+        <div className="md:hidden pt-3 pb-2 border-t border-gray-800 mt-3 max-w-7xl mx-auto">
+          <form onSubmit={handleMobileSearch} className="flex gap-2">
+            <input autoFocus type="text" placeholder="Search pets..." value={mobileSearch}
+              onChange={e => setMobileSearch(e.target.value)}
               className="flex-1 text-white text-sm rounded-xl px-4 py-2 outline-none"
               style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(74,222,128,0.15)' }} />
             <button type="submit" className="px-3 py-2 rounded-xl text-black font-bold text-sm"
               style={{ background: 'linear-gradient(135deg, #4ade80, #22c55e)' }}>Go</button>
           </form>
-          {showSuggestions && suggestions.length > 0 && (
+          {mobileSuggestions.length > 0 && (
             <div className="rounded-xl overflow-hidden mt-2" style={{ border: '1px solid rgba(74,222,128,0.15)', background: '#0a0f0a' }}>
-              {suggestions.map(item => (
-                <button key={item.id} onClick={() => { handleSuggestionClick(item.name); setMobileSearchOpen(false) }}
+              {mobileSuggestions.map(item => (
+                <button key={item.id} onClick={() => handleMobileSuggestionClick(item.name)}
                   className="w-full flex items-center gap-3 px-3 py-2.5 text-left"
-                  style={{ background: 'transparent' }}>
+                  style={{ background: 'transparent' }}
+                  onTouchStart={e => e.currentTarget.style.background = 'rgba(74,222,128,0.08)'}
+                  onTouchEnd={e => e.currentTarget.style.background = 'transparent'}>
                   {item.image_url
                     ? <img src={item.image_url} alt={item.name} className="w-8 h-8 object-contain rounded-lg flex-shrink-0" />
                     : <div className="w-8 h-8 rounded-lg flex-shrink-0 text-lg flex items-center justify-center" style={{ background: 'rgba(74,222,128,0.1)' }}>🐾</div>
