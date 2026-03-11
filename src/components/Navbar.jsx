@@ -97,9 +97,10 @@ function Navbar() {
   return (
     <nav className="bg-gray-950 border-b border-green-500 px-6 py-4 relative" style={{ zIndex: 100 }}>
       <div className="flex justify-between items-center max-w-7xl mx-auto gap-4">
-        <Link to="/" className="text-green-400 text-xl font-bold tracking-widest flex-shrink-0">
-          🌳 PixelGrove
-        </Link>
+        <Link to="/" className="flex items-center gap-2 flex-shrink-0">
+  <img src="/PGLO.png" alt="PixelGrove" className="h-10 w-auto" />
+  <span className="text-green-400 text-xl font-bold tracking-widest">PixelGrove</span>
+</Link>
 
         {/* Desktop Links */}
         <div className="hidden md:flex gap-5 items-center flex-1 justify-center">
