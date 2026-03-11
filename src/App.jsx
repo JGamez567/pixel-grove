@@ -9,6 +9,10 @@ import Success from './components/Success'
 import Reviews from './components/Reviews'
 import HowItWorks from './components/HowItWorks'
 import Socials from './components/Socials'
+import ChatWidget from './components/ChatWidget'
+import PrivacyPolicy from './components/PrivacyPolicy'
+import TermsOfService from './components/TermsOfService'
+import RefundPolicy from './components/RefundPolicy'
 
 function App() {
   return (
@@ -25,7 +29,11 @@ function App() {
             <Route path="/reviews" element={<Reviews />} />
             <Route path="/how-it-works" element={<HowItWorks />} />
             <Route path="/socials" element={<Socials />} />
+            <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+            <Route path="/terms-of-service" element={<TermsOfService />} />
+            <Route path="/refund-policy" element={<RefundPolicy />} />
           </Routes>
+          <ChatWidget />
         </div>
       </CartProvider>
     </BrowserRouter>
