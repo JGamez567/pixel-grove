@@ -25,6 +25,7 @@ function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false)
   const [shopOpen, setShopOpen] = useState(false)
   const [moreOpen, setMoreOpen] = useState(false)
+  const [mobileSearchOpen, setMobileSearchOpen] = useState(false)
   const [search, setSearch] = useState('')
   const [suggestions, setSuggestions] = useState([])
   const [showSuggestions, setShowSuggestions] = useState(false)
@@ -206,7 +207,11 @@ function Navbar() {
         </div>
 
         {/* Mobile Right Side */}
-        <div className="flex md:hidden items-center gap-4">
+        <div className="flex md:hidden items-center gap-3">
+          <button onClick={() => { setMobileSearchOpen(!mobileSearchOpen); setMenuOpen(false) }}
+            className="text-gray-300 hover:text-green-400 transition text-xl">
+            🔍
+          </button>
           <Link to="/cart" className="relative text-gray-300">
             🛒
             {itemCount > 0 && (
@@ -215,29 +220,27 @@ function Navbar() {
               </span>
             )}
           </Link>
-          <button onClick={() => setMenuOpen(!menuOpen)} className="text-gray-300 hover:text-green-400 text-2xl transition">
+          <button onClick={() => { setMenuOpen(!menuOpen); setMobileSearchOpen(false) }} className="text-gray-300 hover:text-green-400 text-2xl transition">
             {menuOpen ? '✕' : '☰'}
           </button>
         </div>
       </div>
 
-      {/* Mobile Menu */}
-      {menuOpen && (
-        <div className="md:hidden flex flex-col gap-1 pt-4 pb-2 border-t border-gray-800 mt-4 max-w-7xl mx-auto">
-          <form onSubmit={handleSearch} className="flex gap-2 mb-3">
-            <input type="text" placeholder="Search pets..." value={search}
+      {/* Mobile Search Bar */}
+      {mobileSearchOpen && (
+        <div className="md:hidden pt-3 pb-1 border-t border-gray-800 mt-3 max-w-7xl mx-auto" ref={searchRef}>
+          <form onSubmit={e => { handleSearch(e); setMobileSearchOpen(false) }} className="flex gap-2">
+            <input autoFocus type="text" placeholder="Search pets..." value={search}
               onChange={e => { setSearch(e.target.value); setShowSuggestions(true) }}
               className="flex-1 text-white text-sm rounded-xl px-4 py-2 outline-none"
               style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(74,222,128,0.15)' }} />
             <button type="submit" className="px-3 py-2 rounded-xl text-black font-bold text-sm"
-              style={{ background: 'linear-gradient(135deg, #4ade80, #22c55e)' }}>🔍</button>
+              style={{ background: 'linear-gradient(135deg, #4ade80, #22c55e)' }}>Go</button>
           </form>
-
-          {/* Mobile suggestions */}
           {showSuggestions && suggestions.length > 0 && (
-            <div className="rounded-xl overflow-hidden mb-2" style={{ border: '1px solid rgba(74,222,128,0.15)', background: '#0a0f0a' }}>
+            <div className="rounded-xl overflow-hidden mt-2" style={{ border: '1px solid rgba(74,222,128,0.15)', background: '#0a0f0a' }}>
               {suggestions.map(item => (
-                <button key={item.id} onClick={() => handleSuggestionClick(item.name)}
+                <button key={item.id} onClick={() => { handleSuggestionClick(item.name); setMobileSearchOpen(false) }}
                   className="w-full flex items-center gap-3 px-3 py-2.5 text-left"
                   style={{ background: 'transparent' }}>
                   {item.image_url
@@ -253,7 +256,12 @@ function Navbar() {
               ))}
             </div>
           )}
+        </div>
+      )}
 
+      {/* Mobile Menu */}
+      {menuOpen && (
+        <div className="md:hidden flex flex-col gap-1 pt-4 pb-2 border-t border-gray-800 mt-4 max-w-7xl mx-auto">
           <Link to="/" onClick={() => setMenuOpen(false)} className="text-gray-300 hover:text-green-400 transition py-2">Home</Link>
           <div className="py-2">
             <p className="text-xs font-bold tracking-widest uppercase mb-2" style={{ color: 'rgba(74,222,128,0.6)' }}>Shop</p>
