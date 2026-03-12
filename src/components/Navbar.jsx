@@ -20,7 +20,7 @@ const moreLinks = [
 ]
 
 function Navbar() {
-  const { cart } = useCart()
+  const { cart, setDrawerOpen } = useCart()
   const itemCount = cart.reduce((sum, i) => sum + i.quantity, 0)
   const [menuOpen, setMenuOpen] = useState(false)
   const [shopOpen, setShopOpen] = useState(false)
@@ -55,7 +55,6 @@ function Navbar() {
     return () => document.removeEventListener('mousedown', handleClick)
   }, [])
 
-  // Desktop suggestions
   useEffect(() => {
     if (!search.trim()) { setSuggestions([]); return }
     const q = search.toLowerCase()
@@ -66,7 +65,6 @@ function Navbar() {
     setSuggestions(Object.values(seen).slice(0, 6))
   }, [search, allItems])
 
-  // Mobile suggestions — completely separate
   useEffect(() => {
     if (!mobileSearch.trim()) { setMobileSuggestions([]); return }
     const q = mobileSearch.toLowerCase()
@@ -104,14 +102,14 @@ function Navbar() {
   }
 
   function handleSuggestionClick(name) {
-    navigate(`/shop?search=${encodeURIComponent(name)}`)
+    navigate(`/shop/${encodeURIComponent(name)}`)
     setSearch('')
     setSuggestions([])
     setShowSuggestions(false)
   }
 
   function handleMobileSuggestionClick(name) {
-    navigate(`/shop?search=${encodeURIComponent(name)}`)
+    navigate(`/shop/${encodeURIComponent(name)}`)
     setMobileSearch('')
     setMobileSuggestions([])
     setMobileSearchOpen(false)
@@ -120,12 +118,25 @@ function Navbar() {
 
   const dropdownStyle = { background: '#0a0f0a', border: '1px solid rgba(74,222,128,0.2)', zIndex: 200 }
 
+  const CartBtn = ({ mobile }) => (
+    <button
+      onClick={() => setDrawerOpen(true)}
+      className={`relative ${mobile ? 'text-gray-300' : 'text-gray-300 hover:text-green-400 transition text-sm font-medium'}`}>
+      🛒 {!mobile && 'Cart'}
+      {itemCount > 0 && (
+        <span className={`absolute ${mobile ? '-top-2 -right-2' : '-top-2 -right-4'} bg-green-500 text-black text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center`}>
+          {itemCount}
+        </span>
+      )}
+    </button>
+  )
+
   return (
     <nav className="bg-gray-950 border-b border-green-500 px-6 py-4 relative" style={{ zIndex: 100 }}>
       <div className="flex justify-between items-center max-w-7xl mx-auto gap-4">
 
         <Link to="/" className="flex items-center gap-2 flex-shrink-0">
-          <img src="/PGLOGO.png" alt="PixelGrove" className="h-10 w-auto" />
+          <img src="/PGLOGO1.png" alt="PixelGrove" className="h-10 w-auto" />
           <span className="text-green-400 text-xl font-bold tracking-widest">PixelGrove</span>
         </Link>
 
@@ -218,14 +229,7 @@ function Navbar() {
 
         {/* Desktop Right */}
         <div className="hidden md:flex items-center gap-3 flex-shrink-0">
-          <Link to="/cart" className="relative text-gray-300 hover:text-green-400 transition text-sm font-medium">
-            🛒 Cart
-            {itemCount > 0 && (
-              <span className="absolute -top-2 -right-4 bg-green-500 text-black text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
-                {itemCount}
-              </span>
-            )}
-          </Link>
+          <CartBtn mobile={false} />
           <a href="https://discord.gg/yZHbUFTh" target="_blank" rel="noopener noreferrer"
             className="bg-indigo-600 hover:bg-indigo-500 text-white font-bold px-4 py-2 rounded-lg transition flex items-center gap-2 text-sm">
             💬 Discord
@@ -239,14 +243,7 @@ function Navbar() {
             className="text-gray-300 hover:text-green-400 transition text-xl">
             🔍
           </button>
-          <Link to="/cart" className="relative text-gray-300">
-            🛒
-            {itemCount > 0 && (
-              <span className="absolute -top-2 -right-2 bg-green-500 text-black text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">
-                {itemCount}
-              </span>
-            )}
-          </Link>
+          <CartBtn mobile={true} />
           <button onClick={() => { setMenuOpen(!menuOpen); setMobileSearchOpen(false) }} className="text-gray-300 hover:text-green-400 text-2xl transition">
             {menuOpen ? '✕' : '☰'}
           </button>

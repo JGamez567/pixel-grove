@@ -13,6 +13,8 @@ import ChatWidget from './components/ChatWidget'
 import PrivacyPolicy from './components/PrivacyPolicy'
 import TermsOfService from './components/TermsOfService'
 import RefundPolicy from './components/RefundPolicy'
+import CartDrawer from './components/CartDrawer'
+import ItemDetail from './components/ItemDetail'
 
 function App() {
   return (
@@ -32,8 +34,11 @@ function App() {
             <Route path="/privacy-policy" element={<PrivacyPolicy />} />
             <Route path="/terms-of-service" element={<TermsOfService />} />
             <Route path="/refund-policy" element={<RefundPolicy />} />
+            <Route path="/shop/:name" element={<ItemDetail />} />
+
           </Routes>
           <ChatWidget />
+          <CartDrawer />
         </div>
       </CartProvider>
     </BrowserRouter>

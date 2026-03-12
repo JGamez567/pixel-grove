@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { useSearchParams, useNavigate } from 'react-router-dom'
 import { useCart } from './CartContext'
 import { supabase } from '../supabase'
 
@@ -40,6 +40,7 @@ function StockLabel({ stock }) {
 function PetCard({ petName, combos }) {
   const { addToCart, cart } = useCart()
   const [hovered, setHovered] = useState(false)
+  const navigate = useNavigate()
 
   const availableTypes = [...new Set(combos.map(c => c.type))]
   const availablePotions = [...new Set(combos.map(c => c.potion))]
@@ -56,7 +57,8 @@ function PetCard({ petName, combos }) {
   const cartQty = cartItem ? cartItem.quantity : 0
   const canAdd = currentCombo && currentCombo.stock > cartQty
 
-  function handleTypeSelect(type) {
+  function handleTypeSelect(e, type) {
+    e.stopPropagation()
     setSelectedType(type)
     const comboWithSamePotion = combos.find(c => c.type === type && c.potion === selectedPotion)
     if (!comboWithSamePotion) {
@@ -65,17 +67,26 @@ function PetCard({ petName, combos }) {
     }
   }
 
-  function handleAddToCart() {
+  function handleAddToCart(e) {
+    e.stopPropagation()
     if (!canAdd) return
     if (currentCombo.stock <= cartQty) { alert(`Only ${currentCombo.stock} in stock!`); return }
     addToCart(currentCombo, `${currentCombo.type} ${currentCombo.potion}`, currentCombo.price)
   }
 
+  function handlePotionSelect(e, p, comboExists) {
+    e.stopPropagation()
+    if (comboExists) setSelectedPotion(p)
+  }
+
   const typeStyle = TYPE_STYLES[selectedType] || TYPE_STYLES.Normal
 
   return (
-    <div onMouseEnter={() => setHovered(true)} onMouseLeave={() => setHovered(false)}
-      className="rounded-2xl p-5 transition-all duration-300 flex flex-col"
+    <div
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      onClick={() => navigate(`/shop/${encodeURIComponent(petName)}`)}
+      className="rounded-2xl p-5 transition-all duration-300 flex flex-col cursor-pointer"
       style={{
         background: 'rgba(255,255,255,0.02)',
         border: hovered ? `1px solid ${typeStyle.active}40` : '1px solid rgba(74,222,128,0.08)',
@@ -97,7 +108,7 @@ function PetCard({ petName, combos }) {
             const ts = TYPE_STYLES[t]
             const isActive = selectedType === t
             return (
-              <button key={t} onClick={() => handleTypeSelect(t)}
+              <button key={t} onClick={e => handleTypeSelect(e, t)}
                 className="flex-1 py-1.5 rounded-lg text-xs font-bold transition-all"
                 style={isActive ? {
                   background: t === 'Mega' ? 'linear-gradient(135deg, #c084fc, #a855f7)' : 'linear-gradient(135deg, #4ade80, #22c55e)',
@@ -117,7 +128,7 @@ function PetCard({ petName, combos }) {
             const isActive = selectedPotion === p
             const comboExists = combos.find(c => c.type === selectedType && c.potion === p)
             return (
-              <button key={p} onClick={() => comboExists && setSelectedPotion(p)}
+              <button key={p} onClick={e => handlePotionSelect(e, p, comboExists)}
                 className="flex-1 py-1.5 rounded-lg text-xs font-bold transition-all"
                 style={isActive ? {
                   background: 'rgba(255,255,255,0.1)', color: ps.color,
@@ -165,7 +176,7 @@ function Shop() {
   const [search, setSearch] = useState(() => searchParams.get('search') || '')
   const [minPrice, setMinPrice] = useState('')
   const [maxPrice, setMaxPrice] = useState('')
-  const [stockFilter, setStockFilter] = useState('all') // 'all' | 'instock' | 'soldout'
+  const [stockFilter, setStockFilter] = useState('all')
   const [showFilters, setShowFilters] = useState(false)
 
   const [activeCategory, setActiveCategory] = useState(() => {
@@ -204,8 +215,6 @@ function Shop() {
     const matchesSearch = name.toLowerCase().includes(search.toLowerCase())
     const matchesCategory = activeCategory === 'All' || combos[0].category === activeCategory
     const matchesType = !activeType || combos.some(c => c.type === activeType)
-
-    // Price filter — check if any combo falls in range
     const min = minPrice !== '' ? parseFloat(minPrice) : null
     const max = maxPrice !== '' ? parseFloat(maxPrice) : null
     const matchesPrice = combos.some(c => {
@@ -213,14 +222,8 @@ function Shop() {
       if (max !== null && c.price > max) return false
       return true
     })
-
-    // Stock filter
     const totalStock = combos.reduce((sum, c) => sum + (c.stock || 0), 0)
-    const matchesStock =
-      stockFilter === 'all' ? true :
-      stockFilter === 'instock' ? totalStock > 0 :
-      stockFilter === 'soldout' ? totalStock <= 0 : true
-
+    const matchesStock = stockFilter === 'all' ? true : stockFilter === 'instock' ? totalStock > 0 : totalStock <= 0
     return matchesSearch && matchesCategory && matchesType && matchesPrice && matchesStock
   })
 
@@ -242,7 +245,7 @@ function Shop() {
         <div style={{ opacity: visible ? 1 : 0, transform: visible ? 'translateY(0)' : 'translateY(20px)', transition: 'all 0.6s ease' }}>
           <div className="mb-2 text-xs font-bold tracking-widest uppercase" style={{ color: 'rgba(74,222,128,0.6)' }}>🌿 PixelGrove Store</div>
           <h1 className="text-4xl md:text-6xl font-bold text-white mb-2">Browse <span style={{ background: 'linear-gradient(135deg, #4ade80, #86efac)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Items</span></h1>
-          <p className="text-gray-500 mb-10">Find your perfect pet or item</p>
+          <p className="text-gray-500 mb-10">Click any item to see more details</p>
         </div>
 
         {/* Search + Filter toggle */}
@@ -253,31 +256,22 @@ function Shop() {
             style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(74,222,128,0.15)' }} />
           <button onClick={() => setShowFilters(!showFilters)}
             className="px-5 py-4 rounded-xl font-bold text-sm transition-all flex items-center gap-2"
-            style={showFilters ? {
-              background: 'linear-gradient(135deg, #4ade80, #22c55e)', color: '#000'
-            } : {
-              background: 'rgba(255,255,255,0.03)', color: '#9ca3af', border: '1px solid rgba(74,222,128,0.15)'
-            }}>
+            style={showFilters ? { background: 'linear-gradient(135deg, #4ade80, #22c55e)', color: '#000' } : { background: 'rgba(255,255,255,0.03)', color: '#9ca3af', border: '1px solid rgba(74,222,128,0.15)' }}>
             ⚙ Filters
           </button>
         </div>
 
-        {/* Advanced filters panel */}
         {showFilters && (
           <div className="rounded-2xl p-5 mb-6 flex flex-wrap gap-6"
             style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(74,222,128,0.1)' }}>
-
-            {/* Price range */}
             <div>
               <p className="text-xs font-bold tracking-widest uppercase mb-2" style={{ color: 'rgba(74,222,128,0.6)' }}>Price Range</p>
               <div className="flex items-center gap-2">
-                <input type="number" placeholder="Min $" value={minPrice}
-                  onChange={e => setMinPrice(e.target.value)}
+                <input type="number" placeholder="Min $" value={minPrice} onChange={e => setMinPrice(e.target.value)}
                   className="w-24 text-white text-sm rounded-lg px-3 py-2 outline-none"
                   style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(74,222,128,0.15)' }} />
                 <span className="text-gray-500">—</span>
-                <input type="number" placeholder="Max $" value={maxPrice}
-                  onChange={e => setMaxPrice(e.target.value)}
+                <input type="number" placeholder="Max $" value={maxPrice} onChange={e => setMaxPrice(e.target.value)}
                   className="w-24 text-white text-sm rounded-lg px-3 py-2 outline-none"
                   style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(74,222,128,0.15)' }} />
                 {(minPrice || maxPrice) && (
@@ -287,23 +281,13 @@ function Shop() {
                 )}
               </div>
             </div>
-
-            {/* Stock filter */}
             <div>
               <p className="text-xs font-bold tracking-widest uppercase mb-2" style={{ color: 'rgba(74,222,128,0.6)' }}>Availability</p>
               <div className="flex gap-2">
-                {[
-                  { value: 'all', label: 'All' },
-                  { value: 'instock', label: '✅ In Stock' },
-                  { value: 'soldout', label: '❌ Sold Out' },
-                ].map(opt => (
+                {[{ value: 'all', label: 'All' }, { value: 'instock', label: '✅ In Stock' }, { value: 'soldout', label: '❌ Sold Out' }].map(opt => (
                   <button key={opt.value} onClick={() => setStockFilter(opt.value)}
                     className="px-3 py-2 rounded-lg text-xs font-bold transition-all"
-                    style={stockFilter === opt.value ? {
-                      background: 'linear-gradient(135deg, #4ade80, #22c55e)', color: '#000'
-                    } : {
-                      background: 'rgba(255,255,255,0.03)', color: '#9ca3af', border: '1px solid rgba(74,222,128,0.15)'
-                    }}>
+                    style={stockFilter === opt.value ? { background: 'linear-gradient(135deg, #4ade80, #22c55e)', color: '#000' } : { background: 'rgba(255,255,255,0.03)', color: '#9ca3af', border: '1px solid rgba(74,222,128,0.15)' }}>
                     {opt.label}
                   </button>
                 ))}
@@ -317,17 +301,12 @@ function Shop() {
           {categories.map(cat => (
             <button key={cat} onClick={() => { setActiveCategory(cat); setActiveType(null) }}
               className="px-4 py-2 rounded-xl font-bold text-sm transition-all"
-              style={activeCategory === cat && !activeType ? {
-                background: 'linear-gradient(135deg, #4ade80, #22c55e)', color: '#000', boxShadow: '0 0 15px rgba(74,222,128,0.3)'
-              } : {
-                background: 'rgba(255,255,255,0.03)', color: '#9ca3af', border: '1px solid rgba(74,222,128,0.15)'
-              }}>
+              style={activeCategory === cat && !activeType ? { background: 'linear-gradient(135deg, #4ade80, #22c55e)', color: '#000', boxShadow: '0 0 15px rgba(74,222,128,0.3)' } : { background: 'rgba(255,255,255,0.03)', color: '#9ca3af', border: '1px solid rgba(74,222,128,0.15)' }}>
               {cat}
             </button>
           ))}
         </div>
 
-        {/* Type filters */}
         {(activeCategory === 'All' || activeCategory === 'Adopt Me Pet') && (
           <div className="flex flex-wrap gap-2 mb-10">
             {['Mega', 'Neon', 'Normal'].map(t => (
@@ -335,11 +314,8 @@ function Shop() {
                 className="px-4 py-2 rounded-xl font-bold text-sm transition-all"
                 style={activeType === t ? {
                   background: t === 'Mega' ? 'linear-gradient(135deg, #c084fc, #a855f7)' : 'linear-gradient(135deg, #4ade80, #22c55e)',
-                  color: '#000',
-                  boxShadow: t === 'Mega' ? '0 0 15px rgba(192,132,252,0.3)' : '0 0 15px rgba(74,222,128,0.3)'
-                } : {
-                  background: 'rgba(255,255,255,0.03)', color: '#9ca3af', border: '1px solid rgba(74,222,128,0.15)'
-                }}>
+                  color: '#000', boxShadow: t === 'Mega' ? '0 0 15px rgba(192,132,252,0.3)' : '0 0 15px rgba(74,222,128,0.3)'
+                } : { background: 'rgba(255,255,255,0.03)', color: '#9ca3af', border: '1px solid rgba(74,222,128,0.15)' }}>
                 {t === 'Mega' ? '🟣' : t === 'Neon' ? '🟢' : '⚪'} {t}
               </button>
             ))}
