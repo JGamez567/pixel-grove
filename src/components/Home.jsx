@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { supabase } from '../supabase'
 
 function StarField() {
@@ -40,8 +40,76 @@ function StarField() {
   return <canvas ref={canvasRef} className="fixed top-0 left-0 w-full h-full pointer-events-none" style={{ zIndex: 0 }} />
 }
 
+function FeaturedCard({ item }) {
+  const navigate = useNavigate()
+  const [hovered, setHovered] = useState(false)
+  const soldOut = item.stock !== null && item.stock <= 0
+
+  return (
+    <div
+      onClick={() => navigate(`/shop/${encodeURIComponent(item.name)}`)}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      className="cursor-pointer rounded-2xl p-5 flex flex-col transition-all duration-300"
+      style={{
+        background: 'rgba(255,255,255,0.02)',
+        border: hovered ? '1px solid rgba(74,222,128,0.35)' : '1px solid rgba(74,222,128,0.08)',
+        boxShadow: hovered ? '0 0 30px rgba(74,222,128,0.1)' : 'none',
+        transform: hovered ? 'translateY(-4px)' : 'translateY(0)',
+      }}>
+
+      {/* Hot badge */}
+      <div className="flex justify-between items-start mb-3">
+        <span className="text-xs font-black px-2.5 py-1 rounded-full"
+          style={{ background: 'rgba(74,222,128,0.12)', color: '#4ade80', border: '1px solid rgba(74,222,128,0.25)' }}>
+          🔥 Featured
+        </span>
+        {soldOut
+          ? <span className="text-xs font-bold" style={{ color: '#f87171' }}>Sold Out</span>
+          : item.stock <= 3
+            ? <span className="text-xs font-bold" style={{ color: '#fb923c' }}>{item.stock} left</span>
+            : <span className="text-xs font-bold" style={{ color: 'rgba(74,222,128,0.5)' }}>{item.stock} in stock</span>
+        }
+      </div>
+
+      {/* Image */}
+      <div className="rounded-xl flex items-center justify-center mb-4"
+        style={{ background: 'rgba(255,255,255,0.03)', height: '140px' }}>
+        {item.image_url
+          ? <img src={item.image_url} alt={item.name} className="h-full object-contain p-2"
+              style={{ filter: hovered ? 'drop-shadow(0 0 16px rgba(74,222,128,0.4))' : 'none', transition: 'filter 0.3s' }} />
+          : <span style={{ fontSize: '48px' }}>🐾</span>
+        }
+      </div>
+
+      {/* Info */}
+      <h3 className="text-white font-bold text-base mb-1">{item.name}</h3>
+      <p className="text-xs font-bold mb-3 tracking-wider uppercase" style={{ color: 'rgba(74,222,128,0.5)' }}>
+        {item.type !== 'Normal' ? `${item.type} · ` : ''}{item.category}
+      </p>
+
+      <div className="mt-auto flex items-center justify-between">
+        <span className="font-bold text-xl"
+          style={{ background: 'linear-gradient(135deg, #4ade80, #86efac)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+          ${item.price}
+        </span>
+        <span className="text-xs font-bold px-3 py-1.5 rounded-lg transition-all"
+          style={{
+            background: hovered ? 'linear-gradient(135deg, #4ade80, #22c55e)' : 'rgba(74,222,128,0.08)',
+            color: hovered ? '#000' : '#4ade80',
+            border: hovered ? 'none' : '1px solid rgba(74,222,128,0.2)',
+            transition: 'all 0.2s',
+          }}>
+          View →
+        </span>
+      </div>
+    </div>
+  )
+}
+
 function Home() {
   const [reviews, setReviews] = useState([])
+  const [featuredItems, setFeaturedItems] = useState([])
   const [username, setUsername] = useState('')
   const [message, setMessage] = useState('')
   const [rating, setRating] = useState(5)
@@ -50,11 +118,19 @@ function Home() {
 
   useEffect(() => {
     setTimeout(() => setVisible(true), 100)
+
     async function fetchReviews() {
       const { data } = await supabase.from('reviews').select('*').eq('approved', true).order('created_at', { ascending: false }).limit(4)
       if (data) setReviews(data)
     }
+
+    async function fetchFeatured() {
+      const { data } = await supabase.from('items').select('*').eq('featured', true).limit(6)
+      if (data) setFeaturedItems(data)
+    }
+
     fetchReviews()
+    fetchFeatured()
   }, [])
 
   async function handleSubmit() {
@@ -119,6 +195,33 @@ function Home() {
             ))}
           </div>
         </section>
+
+        {/* FEATURED PETS */}
+        {featuredItems.length > 0 && (
+          <section className="px-4 md:px-8 pb-24 max-w-6xl mx-auto">
+            <div className="text-center mb-10">
+              <div className="mb-2 text-xs font-bold tracking-widest uppercase" style={{ color: 'rgba(74,222,128,0.6)' }}>
+                🔥 Hand Picked
+              </div>
+              <h2 className="text-3xl md:text-4xl font-bold text-white mb-2">
+                Featured <span style={{ background: 'linear-gradient(135deg, #4ade80, #86efac)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Items</span>
+              </h2>
+              <p className="text-gray-500">Our most popular picks — grab them before they're gone</p>
+            </div>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6 mb-8">
+              {featuredItems.map(item => (
+                <FeaturedCard key={item.id} item={item} />
+              ))}
+            </div>
+            <div className="text-center">
+              <Link to="/shop"
+                className="inline-block px-8 py-3 rounded-xl font-bold transition-all hover:scale-105"
+                style={{ border: '1px solid rgba(74,222,128,0.3)', color: '#86efac', background: 'rgba(74,222,128,0.05)' }}>
+                View All Items →
+              </Link>
+            </div>
+          </section>
+        )}
 
         {/* FEATURES */}
         <section className="px-4 md:px-8 pb-20 max-w-5xl mx-auto">
@@ -272,14 +375,10 @@ function Home() {
         <footer style={{ borderTop: '1px solid rgba(74,222,128,0.08)', background: 'rgba(0,0,0,0.3)' }}>
           <div className="max-w-6xl mx-auto px-4 md:px-8 py-12">
             <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-10">
-
-              {/* Brand */}
               <div>
                 <h3 className="text-green-400 text-xl font-bold tracking-widest mb-3">🌳 PixelGrove</h3>
                 <p className="text-gray-500 text-sm leading-relaxed">Your trusted Roblox & Adopt Me item store. Fast, safe, and personal delivery every time.</p>
               </div>
-
-              {/* Shop */}
               <div>
                 <h4 className="text-white font-bold mb-3 text-sm tracking-widest uppercase">Shop</h4>
                 <div className="flex flex-col gap-2">
@@ -291,8 +390,6 @@ function Home() {
                   <Link to="/shop?filter=Roblox Item" className="text-gray-500 hover:text-green-400 transition text-sm">Roblox Items</Link>
                 </div>
               </div>
-
-              {/* Help */}
               <div>
                 <h4 className="text-white font-bold mb-3 text-sm tracking-widest uppercase">Help</h4>
                 <div className="flex flex-col gap-2">
@@ -302,8 +399,6 @@ function Home() {
                   <a href="https://discord.gg/yZHbUFTh" target="_blank" rel="noopener noreferrer" className="text-gray-500 hover:text-green-400 transition text-sm">Contact Us</a>
                 </div>
               </div>
-
-              {/* Legal */}
               <div>
                 <h4 className="text-white font-bold mb-3 text-sm tracking-widest uppercase">Legal</h4>
                 <div className="flex flex-col gap-2">
@@ -313,7 +408,6 @@ function Home() {
                 </div>
               </div>
             </div>
-
             <div className="flex flex-col md:flex-row justify-between items-center pt-6 gap-4" style={{ borderTop: '1px solid rgba(74,222,128,0.06)' }}>
               <p className="text-gray-600 text-xs">© 2025 ThePixelGrove. Not affiliated with Roblox or Uplift Games.</p>
               <div className="flex gap-4">
