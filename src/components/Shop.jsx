@@ -3,7 +3,7 @@ import { useSearchParams, useNavigate } from 'react-router-dom'
 import { useCart } from './CartContext'
 import { supabase } from '../supabase'
 
-const categories = ['All', 'Adopt Me Pet', 'Egg', 'Roblox Item', 'Pet Wear']
+const categories = ['All', 'Pet', 'Egg', 'Item', 'Pet Wear']
 
 const RARITY_STYLES = {
   'Common':     { color: '#7dd3fc', bg: 'rgba(125,211,252,0.1)',  border: 'rgba(125,211,252,0.25)' },

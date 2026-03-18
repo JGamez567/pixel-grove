@@ -11,9 +11,9 @@ const TYPE_STYLES = {
 
 const POTION_STYLES = {
   'No Pot':   { label: 'No Potion', color: '#9ca3af', bg: 'rgba(156,163,175,0.1)' },
-  'Fly':      { label: '✈ Fly',     color: '#60a5fa', bg: 'rgba(96,165,250,0.1)'  },
-  'Ride':     { label: '🔴 Ride',   color: '#f87171', bg: 'rgba(248,113,113,0.1)' },
-  'Fly-Ride': { label: '✈🔴 FR',   color: '#f59e0b', bg: 'rgba(245,158,11,0.1)'  },
+  'Fly':      { label: 'Fly',     color: '#60a5fa', bg: 'rgba(96,165,250,0.1)'  },
+  'Ride':     { label: 'Ride',   color: '#f87171', bg: 'rgba(248,113,113,0.1)' },
+  'Fly-Ride': { label: 'Fly-Ride',   color: '#f59e0b', bg: 'rgba(245,158,11,0.1)'  },
 }
 
 function StockBar({ stock }) {
