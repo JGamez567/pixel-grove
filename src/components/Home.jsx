@@ -226,7 +226,7 @@ function Home() {
         <section style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center', padding: 'clamp(100px,15vw,140px) 24px 80px' }}>
 
           <div style={{ ...heroFade(0), marginBottom: '24px', display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '7px 18px', borderRadius: '999px', border: '1px solid rgba(74,222,128,0.25)', background: 'rgba(74,222,128,0.05)', color: 'rgba(134,239,172,0.9)', fontSize: '11px', fontWeight: 700, letterSpacing: '3px', textTransform: 'uppercase' }}>
-            ✦ Roblox &amp; Adopt Me Store ✦
+            ✦ Virtual Item Store ✦
           </div>
 
           <h1 style={{
