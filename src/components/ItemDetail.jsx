@@ -45,6 +45,10 @@ function ItemDetail() {
   const [selectedType, setSelectedType] = useState(null)
   const [selectedPotion, setSelectedPotion] = useState(null)
   const [added, setAdded] = useState(false)
+  const [user, setUser] = useState(null)
+  const [wishlisted, setWishlisted] = useState(false)
+  const [wishlistLoading, setWishlistLoading] = useState(false)
+  const [wishlistId, setWishlistId] = useState(null)
 
   const decodedName = decodeURIComponent(name)
 
@@ -61,7 +65,25 @@ function ItemDetail() {
       setTimeout(() => setVisible(true), 50)
     }
     fetchData()
+
+    // Get current user
+    supabase.auth.getUser().then(({ data: { user } }) => setUser(user))
   }, [decodedName])
+
+  // Check if item is already wishlisted once combos + user are loaded
+  useEffect(() => {
+    async function checkWishlist() {
+      if (!user || !combos[0]) return
+      const { data } = await supabase
+        .from('wishlist')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('item_id', combos[0].id)
+        .maybeSingle()
+      if (data) { setWishlisted(true); setWishlistId(data.id) }
+    }
+    checkWishlist()
+  }, [user, combos])
 
   const availableTypes = [...new Set(combos.map(c => c.type))]
   const availablePotions = [...new Set(combos.map(c => c.potion))]
@@ -71,7 +93,6 @@ function ItemDetail() {
     || combos.find(c => c.type === selectedType)
     || combos[0]
 
-  // ── these must be in this order ──
   const cartItem = cart.find(c => c.id === currentCombo?.id)
   const cartQty = cartItem ? cartItem.quantity : 0
   const soldOut = !currentCombo || currentCombo.stock <= 0
@@ -92,6 +113,23 @@ function ItemDetail() {
     addToCart(currentCombo, `${currentCombo.type} ${currentCombo.potion}`, currentCombo.price)
     setAdded(true)
     setTimeout(() => setAdded(false), 2000)
+  }
+
+  async function handleWishlist() {
+    if (!user) { navigate('/login'); return }
+    setWishlistLoading(true)
+    if (wishlisted && wishlistId) {
+      await supabase.from('wishlist').delete().eq('id', wishlistId)
+      setWishlisted(false)
+      setWishlistId(null)
+    } else {
+      const { data } = await supabase.from('wishlist').insert({
+        user_id: user.id,
+        item_id: combos[0].id,
+      }).select().single()
+      if (data) { setWishlisted(true); setWishlistId(data.id) }
+    }
+    setWishlistLoading(false)
   }
 
   const typeStyle = TYPE_STYLES[selectedType] || TYPE_STYLES.Normal
@@ -188,13 +226,32 @@ function ItemDetail() {
           {/* RIGHT — Info */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
 
+            {/* Name + wishlist */}
             <div>
               <p style={{ color: 'rgba(74,222,128,0.5)', fontSize: '11px', fontWeight: 900, letterSpacing: '3px', textTransform: 'uppercase', marginBottom: '8px' }}>
                 {currentCombo.category}
               </p>
-              <h1 style={{ color: '#fff', fontSize: '40px', fontWeight: 900, lineHeight: 1.1, margin: 0, marginBottom: '8px' }}>
-                {decodedName}
-              </h1>
+              <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '12px' }}>
+                <h1 style={{ color: '#fff', fontSize: '40px', fontWeight: 900, lineHeight: 1.1, margin: 0, marginBottom: '8px' }}>
+                  {decodedName}
+                </h1>
+                {/* Wishlist button */}
+                <button onClick={handleWishlist} disabled={wishlistLoading}
+                  title={user ? (wishlisted ? 'Remove from wishlist' : 'Add to wishlist') : 'Sign in to wishlist'}
+                  style={{
+                    flexShrink: 0, width: '44px', height: '44px', borderRadius: '12px', marginTop: '4px',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    cursor: wishlistLoading ? 'not-allowed' : 'pointer',
+                    background: wishlisted ? 'rgba(248,113,113,0.15)' : 'rgba(255,255,255,0.04)',
+                    border: wishlisted ? '1px solid rgba(248,113,113,0.35)' : '1px solid rgba(255,255,255,0.08)',
+                    fontSize: '20px', transition: 'all 0.2s',
+                    transform: wishlistLoading ? 'scale(0.9)' : 'scale(1)',
+                  }}
+                  onMouseEnter={e => { if (!wishlistLoading) e.currentTarget.style.transform = 'scale(1.1)' }}
+                  onMouseLeave={e => e.currentTarget.style.transform = 'scale(1)'}>
+                  {wishlisted ? '❤️' : '🤍'}
+                </button>
+              </div>
               {selectedType && (
                 <span style={{
                   display: 'inline-block', padding: '4px 14px', borderRadius: '999px',
@@ -204,6 +261,11 @@ function ItemDetail() {
                 }}>
                   {selectedType}
                 </span>
+              )}
+              {!user && (
+                <p style={{ color: '#6b7280', fontSize: '12px', marginTop: '8px' }}>
+                  <span style={{ cursor: 'pointer', color: '#4ade80', textDecoration: 'underline' }} onClick={() => navigate('/login')}>Sign in</span> to save to your wishlist
+                </p>
               )}
             </div>
 
@@ -277,8 +339,20 @@ function ItemDetail() {
             </div>
 
             {soldOut ? (
-              <div style={{ padding: '16px', borderRadius: '16px', textAlign: 'center', background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.2)', color: '#f87171', fontWeight: 700, fontSize: '15px' }}>
-                Sold Out
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                <div style={{ padding: '16px', borderRadius: '16px', textAlign: 'center', background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.2)', color: '#f87171', fontWeight: 700, fontSize: '15px' }}>
+                  Sold Out
+                </div>
+                <button onClick={handleWishlist} disabled={wishlistLoading}
+                  style={{
+                    padding: '13px', borderRadius: '14px', width: '100%',
+                    background: wishlisted ? 'rgba(248,113,113,0.1)' : 'rgba(255,255,255,0.04)',
+                    color: wishlisted ? '#f87171' : '#9ca3af',
+                    border: wishlisted ? '1px solid rgba(248,113,113,0.3)' : '1px solid rgba(255,255,255,0.08)',
+                    fontWeight: 700, fontSize: '14px', cursor: 'pointer', transition: 'all 0.2s',
+                  }}>
+                  {wishlisted ? '❤️ Saved to Wishlist' : '🤍 Save to Wishlist'}
+                </button>
               </div>
             ) : maxed ? (
               <div style={{ padding: '16px', borderRadius: '16px', textAlign: 'center', background: 'rgba(251,191,36,0.06)', border: '1px solid rgba(251,191,36,0.2)', color: '#fbbf24', fontWeight: 700, fontSize: '15px' }}>
