@@ -206,7 +206,7 @@ export default function AdminPanel() {
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '10px', marginBottom: '12px' }}>
                     <div>
                       <p style={{ color: '#6b7280', fontSize: '10px', fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase', marginBottom: '3px' }}>
-                        Order #{order.id.slice(0, 8).toUpperCase()}
+                        Order #{String(order.id).slice(0, 8).toUpperCase()}
                       </p>
                       <p style={{ color: '#9ca3af', fontSize: '12px' }}>
                         {new Date(order.created_at).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
