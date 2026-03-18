@@ -20,10 +20,10 @@ const TYPE_STYLES = {
 }
 
 const POTION_STYLES = {
-  'No Pot':   { label: 'No Pot',  color: '#9ca3af' },
-  'Fly':      { label: '✈ Fly',   color: '#60a5fa' },
-  'Ride':     { label: '🔴 Ride', color: '#f87171' },
-  'Fly-Ride': { label: '✈🔴 FR', color: '#f59e0b' },
+  'No Potion':   { label: 'No Pot',  color: '#9ca3af' },
+  'Fly':      { label: 'Fly',   color: '#60a5fa' },
+  'Ride':     { label: 'Ride', color: '#f87171' },
+  'Fly-Ride': { label: 'Fly-Ride', color: '#f59e0b' },
 }
 
 function Badge({ type, potion }) {
