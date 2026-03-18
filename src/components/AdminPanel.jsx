@@ -22,6 +22,7 @@ export default function AdminPanel() {
   const [filter, setFilter] = useState('all')
   const [updating, setUpdating] = useState(null)
   const [toast, setToast] = useState(null)
+  const [search, setSearch] = useState('')
 
   useEffect(() => {
     if (authed) fetchOrders()
@@ -80,7 +81,13 @@ export default function AdminPanel() {
     setUpdating(null)
   }
 
-  const filtered = filter === 'all' ? orders : orders.filter(o => o.status === filter)
+  const filtered = orders.filter(o => {
+  const matchesFilter = filter === 'all' || o.status === filter
+  const matchesSearch = !search.trim() || 
+    o.username?.toLowerCase().includes(search.toLowerCase()) ||
+    o.email?.toLowerCase().includes(search.toLowerCase())
+  return matchesFilter && matchesSearch
+})
   const counts = STATUS_FLOW.reduce((acc, s) => {
     acc[s] = orders.filter(o => o.status === s).length
     return acc
@@ -165,7 +172,20 @@ export default function AdminPanel() {
             )
           })}
         </div>
-
+{/* Search bar */}
+<div style={{ marginBottom: '16px' }}>
+  <input
+    type="text"
+    placeholder="Search by username or email..."
+    value={search}
+    onChange={e => setSearch(e.target.value)}
+    style={{
+      width: '100%', padding: '11px 16px', borderRadius: '12px',
+      background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(74,222,128,0.15)',
+      color: '#f0faf0', fontSize: '14px', outline: 'none', boxSizing: 'border-box',
+    }}
+  />
+</div>
         {/* Filter bar */}
         <div style={{ display: 'flex', gap: '6px', marginBottom: '20px', flexWrap: 'wrap' }}>
           <button onClick={() => setFilter('all')}
