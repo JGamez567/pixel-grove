@@ -315,18 +315,26 @@ function Navbar() {
           </a>
         </div>
 
-        {/* Mobile Right Side */}
-        <div className="flex md:hidden items-center gap-3">
-          <button
-            onClick={() => { setMobileSearchOpen(!mobileSearchOpen); setMenuOpen(false); setMobileSearch(''); setMobileSuggestions([]) }}
-            className="text-gray-300 hover:text-green-400 transition text-xl">
-            🔍
-          </button>
-          <CartBtn mobile={true} />
-          <button onClick={() => { setMenuOpen(!menuOpen); setMobileSearchOpen(false) }} className="text-gray-300 hover:text-green-400 text-2xl transition">
-            {menuOpen ? '✕' : '☰'}
-          </button>
-        </div>
+       {/* Mobile Right Side */}
+<div className="flex md:hidden items-center gap-3">
+  <button
+    onClick={() => { setMobileSearchOpen(!mobileSearchOpen); setMenuOpen(false); setMobileSearch(''); setMobileSuggestions([]) }}
+    className="text-gray-300 hover:text-green-400 transition text-xl">
+    🔍
+  </button>
+  <CartBtn mobile={true} />
+  {user ? (
+    <button onClick={() => navigate('/account')}
+      style={{ width: '32px', height: '32px', borderRadius: '50%', background: 'linear-gradient(135deg, #4ade80, #22c55e)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#000', fontSize: '13px', fontWeight: 900, border: 'none', cursor: 'pointer' }}>
+      {(user.user_metadata?.username || user.email)?.[0]?.toUpperCase()}
+    </button>
+  ) : (
+    <Link to="/login" className="text-gray-300 hover:text-green-400 transition text-xl">👤</Link>
+  )}
+  <button onClick={() => { setMenuOpen(!menuOpen); setMobileSearchOpen(false) }} className="text-gray-300 hover:text-green-400 text-2xl transition">
+    {menuOpen ? '✕' : '☰'}
+  </button>
+</div>
       </div>
 
       {/* Mobile Search Bar */}
