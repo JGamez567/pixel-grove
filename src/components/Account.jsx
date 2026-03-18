@@ -3,11 +3,11 @@ import { useNavigate, Link } from 'react-router-dom'
 import { supabase } from '../supabase'
 
 const STATUS_STYLES = {
-  pending:     { label: 'Pending',      color: '#fbbf24', bg: 'rgba(251,191,36,0.1)',   border: 'rgba(251,191,36,0.25)'  },
-  processing:  { label: 'Processing',   color: '#60a5fa', bg: 'rgba(96,165,250,0.1)',   border: 'rgba(96,165,250,0.25)'  },
-  delivering:  { label: 'Out for Delivery', color: '#c084fc', bg: 'rgba(192,132,252,0.1)', border: 'rgba(192,132,252,0.25)' },
-  delivered:   { label: 'Delivered ✓', color: '#4ade80', bg: 'rgba(74,222,128,0.1)',   border: 'rgba(74,222,128,0.25)'  },
-  delayed:     { label: 'Delayed',      color: '#fb923c', bg: 'rgba(251,146,60,0.1)',   border: 'rgba(251,146,60,0.25)'  },
+  pending:     { label: 'Pending',          color: '#fbbf24', bg: 'rgba(251,191,36,0.1)',   border: 'rgba(251,191,36,0.25)'  },
+  processing:  { label: 'Processing',       color: '#60a5fa', bg: 'rgba(96,165,250,0.1)',   border: 'rgba(96,165,250,0.25)'  },
+  delivering:  { label: 'Out for Delivery', color: '#c084fc', bg: 'rgba(192,132,252,0.1)',  border: 'rgba(192,132,252,0.25)' },
+  delivered:   { label: 'Delivered ✓',      color: '#4ade80', bg: 'rgba(74,222,128,0.1)',   border: 'rgba(74,222,128,0.25)'  },
+  delayed:     { label: 'Delayed',          color: '#fb923c', bg: 'rgba(251,146,60,0.1)',   border: 'rgba(251,146,60,0.25)'  },
 }
 
 export default function Account() {
@@ -32,12 +32,24 @@ export default function Account() {
         .order('created_at', { ascending: false })
       if (ordersData) setOrders(ordersData)
 
-      // Fetch wishlist
+      // Fetch wishlist then manually fetch each item
       const { data: wishlistData } = await supabase
         .from('wishlist')
-        .select('*, items(*)')
+        .select('*')
         .eq('user_id', user.id)
-      if (wishlistData) setWishlist(wishlistData)
+
+      if (wishlistData && wishlistData.length > 0) {
+        const itemIds = wishlistData.map(w => w.item_id)
+        const { data: itemsData } = await supabase
+          .from('items')
+          .select('*')
+          .in('id', itemIds)
+        const itemsMap = {}
+        itemsData?.forEach(item => { itemsMap[item.id] = item })
+        setWishlist(wishlistData.map(w => ({ ...w, items: itemsMap[w.item_id] || null })))
+      } else {
+        setWishlist([])
+      }
 
       setLoading(false)
     }
@@ -121,7 +133,7 @@ export default function Account() {
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '10px', marginBottom: '12px' }}>
                     <div>
                       <p style={{ color: '#6b7280', fontSize: '11px', fontWeight: 600, letterSpacing: '1px', textTransform: 'uppercase', marginBottom: '4px' }}>
-                        Order #{order.id.slice(0, 8).toUpperCase()}
+                        Order #{String(order.id).slice(0, 8).toUpperCase()}
                       </p>
                       <p style={{ color: '#9ca3af', fontSize: '12px' }}>
                         {new Date(order.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
@@ -138,7 +150,6 @@ export default function Account() {
                       ${order.total?.toFixed(2)}
                     </span>
                   </div>
-                  {/* Status message */}
                   {order.status === 'delayed' && (
                     <div style={{ marginTop: '12px', padding: '10px 14px', borderRadius: '10px', background: 'rgba(251,146,60,0.08)', border: '1px solid rgba(251,146,60,0.2)', color: '#fb923c', fontSize: '12px' }}>
                       ⏰ Your order is outside our delivery window. We'll deliver between 12PM–2AM CST tomorrow!
