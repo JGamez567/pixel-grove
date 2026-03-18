@@ -199,6 +199,8 @@ function Shop() {
   const [maxPrice, setMaxPrice] = useState('')
   const [stockFilter, setStockFilter] = useState('all')
   const [activeRarity, setActiveRarity] = useState(null)
+  const [sortBy, setSortBy] = useState('default')
+  const [popularityMap, setPopularityMap] = useState({})
   const [showFilters, setShowFilters] = useState(false)
 
   const [activeCategory, setActiveCategory] = useState(() => {
@@ -216,18 +218,39 @@ function Shop() {
     return null
   })
 
-  // Reset visible count when filters change
-  useEffect(() => { setVisibleCount(PAGE_SIZE) }, [search, activeCategory, activeType, activeRarity, minPrice, maxPrice, stockFilter])
+  useEffect(() => { setVisibleCount(PAGE_SIZE) }, [search, activeCategory, activeType, activeRarity, minPrice, maxPrice, stockFilter, sortBy])
 
   useEffect(() => {
     setTimeout(() => setVisible(true), 100)
+
     async function fetchItems() {
       const { data, error } = await supabase.from('items').select('*')
       if (error) console.error(error)
       else setItems(data || [])
       setLoading(false)
     }
+
+    async function fetchPopularity() {
+      const { data } = await supabase.from('orders').select('items')
+      if (!data) return
+      const map = {}
+      data.forEach(order => {
+        const text = order.items || ''
+        // each entry looks like "Dragon (Neon No Pot) x1"
+        const entries = text.split(', ')
+        entries.forEach(entry => {
+          const match = entry.match(/^(.+?)\s*\(/)
+          if (match) {
+            const name = match[1].trim()
+            map[name] = (map[name] || 0) + 1
+          }
+        })
+      })
+      setPopularityMap(map)
+    }
+
     fetchItems()
+    fetchPopularity()
   }, [])
 
   const grouped = items.reduce((acc, item) => {
@@ -253,9 +276,16 @@ function Shop() {
     return matchesSearch && matchesCategory && matchesType && matchesRarity && matchesPrice && matchesStock
   })
 
-  const visibleGroups = filteredGroups.slice(0, visibleCount)
-  const hasMore = visibleCount < filteredGroups.length
-  const remaining = filteredGroups.length - visibleCount
+  const sortedGroups = [...filteredGroups].sort(([nameA], [nameB]) => {
+    if (sortBy === 'az') return nameA.localeCompare(nameB)
+    if (sortBy === 'za') return nameB.localeCompare(nameA)
+    if (sortBy === 'popular') return (popularityMap[nameB] || 0) - (popularityMap[nameA] || 0)
+    return 0
+  })
+
+  const visibleGroups = sortedGroups.slice(0, visibleCount)
+  const hasMore = visibleCount < sortedGroups.length
+  const remaining = sortedGroups.length - visibleCount
 
   if (loading) return (
     <div className="min-h-screen bg-gray-950 flex items-center justify-center">
@@ -294,6 +324,8 @@ function Shop() {
         {showFilters && (
           <div className="rounded-2xl p-5 mb-6 flex flex-wrap gap-6"
             style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(74,222,128,0.1)' }}>
+
+            {/* Price Range */}
             <div>
               <p className="text-xs font-bold tracking-widest uppercase mb-2" style={{ color: 'rgba(74,222,128,0.6)' }}>Price Range</p>
               <div className="flex items-center gap-2">
@@ -311,6 +343,8 @@ function Shop() {
                 )}
               </div>
             </div>
+
+            {/* Availability */}
             <div>
               <p className="text-xs font-bold tracking-widest uppercase mb-2" style={{ color: 'rgba(74,222,128,0.6)' }}>Availability</p>
               <div className="flex gap-2">
@@ -323,6 +357,8 @@ function Shop() {
                 ))}
               </div>
             </div>
+
+            {/* Rarity */}
             <div>
               <p className="text-xs font-bold tracking-widest uppercase mb-2" style={{ color: 'rgba(74,222,128,0.6)' }}>Rarity</p>
               <div className="flex flex-wrap gap-2">
@@ -336,6 +372,25 @@ function Shop() {
                     </button>
                   )
                 })}
+              </div>
+            </div>
+
+            {/* Sort */}
+            <div>
+              <p className="text-xs font-bold tracking-widest uppercase mb-2" style={{ color: 'rgba(74,222,128,0.6)' }}>Sort</p>
+              <div className="flex flex-wrap gap-2">
+                {[
+                  { value: 'default', label: 'Default' },
+                  { value: 'az', label: 'A → Z' },
+                  { value: 'za', label: 'Z → A' },
+                  { value: 'popular', label: '🔥 Most Popular' },
+                ].map(opt => (
+                  <button key={opt.value} onClick={() => setSortBy(opt.value)}
+                    className="px-3 py-2 rounded-lg text-xs font-bold transition-all"
+                    style={sortBy === opt.value ? { background: 'linear-gradient(135deg, #4ade80, #22c55e)', color: '#000' } : { background: 'rgba(255,255,255,0.03)', color: '#9ca3af', border: '1px solid rgba(74,222,128,0.15)' }}>
+                    {opt.label}
+                  </button>
+                ))}
               </div>
             </div>
           </div>
@@ -377,7 +432,10 @@ function Shop() {
         ) : (
           <>
             <p className="text-xs font-bold mb-4" style={{ color: 'rgba(74,222,128,0.4)' }}>
-              Showing {visibleGroups.length} of {filteredGroups.length} items
+              Showing {visibleGroups.length} of {sortedGroups.length} items
+              {sortBy === 'popular' && <span style={{ color: 'rgba(74,222,128,0.6)' }}> · sorted by popularity</span>}
+              {sortBy === 'az' && <span style={{ color: 'rgba(74,222,128,0.6)' }}> · A → Z</span>}
+              {sortBy === 'za' && <span style={{ color: 'rgba(74,222,128,0.6)' }}> · Z → A</span>}
             </p>
 
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
@@ -386,7 +444,6 @@ function Shop() {
               ))}
             </div>
 
-            {/* Load More */}
             {hasMore && (
               <div className="text-center mt-12">
                 <button
@@ -400,9 +457,9 @@ function Shop() {
               </div>
             )}
 
-            {!hasMore && filteredGroups.length > PAGE_SIZE && (
+            {!hasMore && sortedGroups.length > PAGE_SIZE && (
               <p className="text-center mt-10 text-xs font-bold" style={{ color: 'rgba(74,222,128,0.3)' }}>
-                ✦ All {filteredGroups.length} items loaded ✦
+                ✦ All {sortedGroups.length} items loaded ✦
               </p>
             )}
           </>
