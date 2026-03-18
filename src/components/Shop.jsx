@@ -202,9 +202,9 @@ function Shop() {
   const [activeCategory, setActiveCategory] = useState(() => {
     const filter = searchParams.get('filter')
     if (filter === 'Egg') return 'Egg'
-    if (filter === 'Roblox Item') return 'Roblox Item'
+    if (filter === 'Item') return 'Item'
     if (filter === 'Pet Wear') return 'Pet Wear'
-    if (filter === 'Mega' || filter === 'Neon' || filter === 'Normal') return 'Adopt Me Pet'
+    if (filter === 'Mega' || filter === 'Neon' || filter === 'Normal') return 'Pet'
     return 'All'
   })
 
@@ -356,10 +356,10 @@ function Shop() {
           ))}
         </div>
 
-        {(activeCategory === 'All' || activeCategory === 'Adopt Me Pet') && (
+        {(activeCategory === 'All' || activeCategory === 'Pet') && (
           <div className="flex flex-wrap gap-2 mb-10">
             {['Mega', 'Neon', 'Normal'].map(t => (
-              <button key={t} onClick={() => { setActiveType(activeType === t ? null : t); setActiveCategory('Adopt Me Pet') }}
+              <button key={t} onClick={() => { setActiveType(activeType === t ? null : t); setActiveCategory('Pet') }}
                 className="px-4 py-2 rounded-xl font-bold text-sm transition-all"
                 style={activeType === t ? {
                   background: t === 'Mega' ? 'linear-gradient(135deg, #c084fc, #a855f7)' : 'linear-gradient(135deg, #4ade80, #22c55e)',
@@ -371,7 +371,7 @@ function Shop() {
           </div>
         )}
 
-        {!(activeCategory === 'All' || activeCategory === 'Adopt Me Pet') && <div className="mb-10" />}
+        {!(activeCategory === 'All' || activeCategory === 'Pet') && <div className="mb-10" />}
 
         {filteredGroups.length === 0 ? (
           <div className="text-center py-32">

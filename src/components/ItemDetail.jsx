@@ -11,9 +11,9 @@ const TYPE_STYLES = {
 
 const POTION_STYLES = {
   'No Pot':   { label: 'No Potion', color: '#9ca3af', bg: 'rgba(156,163,175,0.1)' },
-  'Fly':      { label: 'Fly',     color: '#60a5fa', bg: 'rgba(96,165,250,0.1)'  },
-  'Ride':     { label: 'Ride',   color: '#f87171', bg: 'rgba(248,113,113,0.1)' },
-  'Fly-Ride': { label: 'Fly-Ride',   color: '#f59e0b', bg: 'rgba(245,158,11,0.1)'  },
+  'Fly':      { label: 'Fly',       color: '#60a5fa', bg: 'rgba(96,165,250,0.1)'  },
+  'Ride':     { label: 'Ride',      color: '#f87171', bg: 'rgba(248,113,113,0.1)' },
+  'Fly-Ride': { label: 'Fly-Ride',  color: '#f59e0b', bg: 'rgba(245,158,11,0.1)'  },
 }
 
 function StockBar({ stock }) {
@@ -38,7 +38,7 @@ function StockBar({ stock }) {
 function ItemDetail() {
   const { name } = useParams()
   const navigate = useNavigate()
-  const { addToCart, cart, setDrawerOpen } = useCart()
+  const { addToCart, cart } = useCart()
   const [combos, setCombos] = useState([])
   const [loading, setLoading] = useState(true)
   const [visible, setVisible] = useState(false)
@@ -49,7 +49,7 @@ function ItemDetail() {
   const decodedName = decodeURIComponent(name)
 
   useEffect(() => {
-    async function fetch() {
+    async function fetchData() {
       const { data } = await supabase.from('items').select('*').eq('name', decodedName)
       if (data && data.length > 0) {
         setCombos(data)
@@ -60,21 +60,23 @@ function ItemDetail() {
       setLoading(false)
       setTimeout(() => setVisible(true), 50)
     }
-    fetch()
+    fetchData()
   }, [decodedName])
 
   const availableTypes = [...new Set(combos.map(c => c.type))]
   const availablePotions = [...new Set(combos.map(c => c.potion))]
-  const isRobloxItem = combos[0]?.category === 'Roblox Item' || combos[0]?.category === 'Egg'
+  const isRobloxItem = combos[0]?.category === 'Item' || combos[0]?.category === 'Egg'
 
   const currentCombo = combos.find(c => c.type === selectedType && c.potion === selectedPotion)
     || combos.find(c => c.type === selectedType)
     || combos[0]
 
-  const soldOut = !currentCombo || (currentCombo.stock !== null && currentCombo.stock <= 0)
+  // ── these must be in this order ──
   const cartItem = cart.find(c => c.id === currentCombo?.id)
   const cartQty = cartItem ? cartItem.quantity : 0
-  const canAdd = currentCombo && currentCombo.stock > cartQty
+  const soldOut = !currentCombo || currentCombo.stock <= 0
+  const maxed = !soldOut && cartQty >= currentCombo.stock
+  const canAdd = !soldOut && !maxed
 
   function handleTypeSelect(type) {
     setSelectedType(type)
@@ -115,7 +117,6 @@ function ItemDetail() {
   return (
     <div style={{ minHeight: '100vh', background: '#030706', position: 'relative', overflow: 'hidden' }}>
 
-      {/* Glow background based on type */}
       <div style={{
         position: 'fixed', top: '-20%', left: '50%', transform: 'translateX(-50%)',
         width: '600px', height: '600px', borderRadius: '50%', pointerEvents: 'none', zIndex: 0,
@@ -130,7 +131,6 @@ function ItemDetail() {
         transition: 'all 0.5s ease',
       }}>
 
-        {/* Back button */}
         <button onClick={() => navigate('/shop')} style={{
           display: 'flex', alignItems: 'center', gap: '8px',
           color: '#6b7280', fontSize: '13px', fontWeight: 600, background: 'none',
@@ -143,7 +143,6 @@ function ItemDetail() {
           ← Back to Shop
         </button>
 
-        {/* Main grid */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '40px', alignItems: 'start' }}>
 
           {/* LEFT — Image */}
@@ -157,7 +156,6 @@ function ItemDetail() {
               minHeight: '320px', position: 'relative', overflow: 'hidden',
               transition: 'all 0.5s ease',
             }}>
-              {/* Subtle grid pattern */}
               <div style={{
                 position: 'absolute', inset: 0, opacity: 0.03,
                 backgroundImage: 'linear-gradient(rgba(74,222,128,1) 1px, transparent 1px), linear-gradient(90deg, rgba(74,222,128,1) 1px, transparent 1px)',
@@ -167,7 +165,6 @@ function ItemDetail() {
                 style={{ maxHeight: '260px', maxWidth: '100%', objectFit: 'contain', position: 'relative', zIndex: 1, filter: `drop-shadow(0 0 30px ${typeStyle.glow})`, transition: 'filter 0.5s ease' }} />
             </div>
 
-            {/* All variants preview */}
             {combos.length > 1 && (
               <div style={{ marginTop: '16px', display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
                 {combos.map(c => (
@@ -191,7 +188,6 @@ function ItemDetail() {
           {/* RIGHT — Info */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
 
-            {/* Name + category */}
             <div>
               <p style={{ color: 'rgba(74,222,128,0.5)', fontSize: '11px', fontWeight: 900, letterSpacing: '3px', textTransform: 'uppercase', marginBottom: '8px' }}>
                 {currentCombo.category}
@@ -211,19 +207,14 @@ function ItemDetail() {
               )}
             </div>
 
-            {/* Description */}
             {currentCombo.description && (
-              <div style={{
-                padding: '18px', borderRadius: '16px',
-                background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(74,222,128,0.08)',
-              }}>
+              <div style={{ padding: '18px', borderRadius: '16px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(74,222,128,0.08)' }}>
                 <p style={{ color: '#9ca3af', fontSize: '14px', lineHeight: '1.7', margin: 0 }}>
                   {currentCombo.description}
                 </p>
               </div>
             )}
 
-            {/* Type selector */}
             {!isRobloxItem && availableTypes.length > 1 && (
               <div>
                 <p style={{ color: '#6b7280', fontSize: '11px', fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase', marginBottom: '10px' }}>Type</p>
@@ -249,7 +240,6 @@ function ItemDetail() {
               </div>
             )}
 
-            {/* Potion selector */}
             {!isRobloxItem && availablePotions.length > 1 && (
               <div>
                 <p style={{ color: '#6b7280', fontSize: '11px', fontWeight: 700, letterSpacing: '2px', textTransform: 'uppercase', marginBottom: '10px' }}>Potion</p>
@@ -276,37 +266,24 @@ function ItemDetail() {
               </div>
             )}
 
-            {/* Price + stock */}
-            <div style={{
-              padding: '20px', borderRadius: '18px',
-              background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(74,222,128,0.1)',
-            }}>
+            <div style={{ padding: '20px', borderRadius: '18px', background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(74,222,128,0.1)' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
                 <span style={{ color: '#6b7280', fontSize: '13px', fontWeight: 600 }}>Price</span>
-                <span style={{
-                  fontSize: '32px', fontWeight: 900,
-                  background: 'linear-gradient(135deg, #4ade80, #86efac)',
-                  WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent',
-                }}>
+                <span style={{ fontSize: '32px', fontWeight: 900, background: 'linear-gradient(135deg, #4ade80, #86efac)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
                   {currentCombo ? `$${currentCombo.price}` : 'N/A'}
                 </span>
               </div>
               <StockBar stock={currentCombo?.stock} />
             </div>
 
-            {/* Add to cart */}
             {soldOut ? (
-              <div style={{
-                padding: '16px', borderRadius: '16px', textAlign: 'center',
-                background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.2)',
-                color: '#f87171', fontWeight: 700, fontSize: '15px',
-              }}>Sold Out</div>
-            ) : !canAdd ? (
-              <div style={{
-                padding: '16px', borderRadius: '16px', textAlign: 'center',
-                background: 'rgba(251,191,36,0.06)', border: '1px solid rgba(251,191,36,0.2)',
-                color: '#fbbf24', fontWeight: 700, fontSize: '15px',
-              }}>Max in Cart</div>
+              <div style={{ padding: '16px', borderRadius: '16px', textAlign: 'center', background: 'rgba(239,68,68,0.06)', border: '1px solid rgba(239,68,68,0.2)', color: '#f87171', fontWeight: 700, fontSize: '15px' }}>
+                Sold Out
+              </div>
+            ) : maxed ? (
+              <div style={{ padding: '16px', borderRadius: '16px', textAlign: 'center', background: 'rgba(251,191,36,0.06)', border: '1px solid rgba(251,191,36,0.2)', color: '#fbbf24', fontWeight: 700, fontSize: '15px' }}>
+                Max in Cart
+              </div>
             ) : (
               <button onClick={handleAddToCart}
                 style={{
@@ -321,12 +298,7 @@ function ItemDetail() {
               </button>
             )}
 
-            {/* Delivery note */}
-            <div style={{
-              display: 'flex', alignItems: 'center', gap: '10px',
-              padding: '14px', borderRadius: '14px',
-              background: 'rgba(74,222,128,0.03)', border: '1px solid rgba(74,222,128,0.08)',
-            }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', padding: '14px', borderRadius: '14px', background: 'rgba(74,222,128,0.03)', border: '1px solid rgba(74,222,128,0.08)' }}>
               <span style={{ fontSize: '20px' }}>⏰</span>
               <p style={{ color: '#6b7280', fontSize: '12px', lineHeight: '1.5', margin: 0 }}>
                 Delivered personally within <strong style={{ color: '#9ca3af' }}>24 hours</strong>. Delivery window: <strong style={{ color: '#9ca3af' }}>12PM – 2AM CST</strong> daily.
