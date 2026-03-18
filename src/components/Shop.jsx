@@ -3,7 +3,7 @@ import { useSearchParams, useNavigate } from 'react-router-dom'
 import { useCart } from './CartContext'
 import { supabase } from '../supabase'
 
-const PAGE_SIZE = 12
+const PAGE_SIZE = 18
 
 const categories = ['All', 'Pet', 'Egg', 'Item', 'Pet Wear']
 
