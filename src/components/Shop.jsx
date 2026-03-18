@@ -3,6 +3,8 @@ import { useSearchParams, useNavigate } from 'react-router-dom'
 import { useCart } from './CartContext'
 import { supabase } from '../supabase'
 
+const PAGE_SIZE = 12
+
 const categories = ['All', 'Pet', 'Egg', 'Item', 'Pet Wear']
 
 const RARITY_STYLES = {
@@ -20,10 +22,10 @@ const TYPE_STYLES = {
 }
 
 const POTION_STYLES = {
-  'No Potion':   { label: 'No Pot',  color: '#9ca3af' },
-  'Fly':      { label: 'Fly',   color: '#60a5fa' },
-  'Ride':     { label: 'Ride', color: '#f87171' },
-  'Fly-Ride': { label: 'Fly-Ride', color: '#f59e0b' },
+  'No Potion': { label: 'No Pot',   color: '#9ca3af' },
+  'Fly':       { label: 'Fly',      color: '#60a5fa' },
+  'Ride':      { label: 'Ride',     color: '#f87171' },
+  'Fly-Ride':  { label: 'Fly-Ride', color: '#f59e0b' },
 }
 
 function Badge({ type, potion }) {
@@ -107,7 +109,6 @@ function PetCard({ petName, combos }) {
       <div className="rounded-xl p-3 mb-4 flex items-center justify-center h-36 relative" style={{ background: 'rgba(255,255,255,0.03)' }}>
         <img src={combos[0].image_url} alt={petName} className="h-full object-contain" />
         <div className="absolute top-2 right-2"><Badge type={selectedType} potion={selectedPotion} /></div>
-        {/* Rarity badge on image */}
         {rarityStyle && (
           <div className="absolute bottom-2 left-2">
             <span className="text-xs font-black px-2 py-0.5 rounded-full"
@@ -191,6 +192,7 @@ function Shop() {
   const [items, setItems] = useState([])
   const [loading, setLoading] = useState(true)
   const [visible, setVisible] = useState(false)
+  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE)
   const [searchParams] = useSearchParams()
   const [search, setSearch] = useState(() => searchParams.get('search') || '')
   const [minPrice, setMinPrice] = useState('')
@@ -213,6 +215,9 @@ function Shop() {
     if (filter === 'Mega' || filter === 'Neon' || filter === 'Normal') return filter
     return null
   })
+
+  // Reset visible count when filters change
+  useEffect(() => { setVisibleCount(PAGE_SIZE) }, [search, activeCategory, activeType, activeRarity, minPrice, maxPrice, stockFilter])
 
   useEffect(() => {
     setTimeout(() => setVisible(true), 100)
@@ -247,6 +252,10 @@ function Shop() {
     const matchesStock = stockFilter === 'all' ? true : stockFilter === 'instock' ? totalStock > 0 : totalStock <= 0
     return matchesSearch && matchesCategory && matchesType && matchesRarity && matchesPrice && matchesStock
   })
+
+  const visibleGroups = filteredGroups.slice(0, visibleCount)
+  const hasMore = visibleCount < filteredGroups.length
+  const remaining = filteredGroups.length - visibleCount
 
   if (loading) return (
     <div className="min-h-screen bg-gray-950 flex items-center justify-center">
@@ -285,8 +294,6 @@ function Shop() {
         {showFilters && (
           <div className="rounded-2xl p-5 mb-6 flex flex-wrap gap-6"
             style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(74,222,128,0.1)' }}>
-
-            {/* Price Range */}
             <div>
               <p className="text-xs font-bold tracking-widest uppercase mb-2" style={{ color: 'rgba(74,222,128,0.6)' }}>Price Range</p>
               <div className="flex items-center gap-2">
@@ -304,8 +311,6 @@ function Shop() {
                 )}
               </div>
             </div>
-
-            {/* Availability */}
             <div>
               <p className="text-xs font-bold tracking-widest uppercase mb-2" style={{ color: 'rgba(74,222,128,0.6)' }}>Availability</p>
               <div className="flex gap-2">
@@ -318,8 +323,6 @@ function Shop() {
                 ))}
               </div>
             </div>
-
-            {/* Rarity */}
             <div>
               <p className="text-xs font-bold tracking-widest uppercase mb-2" style={{ color: 'rgba(74,222,128,0.6)' }}>Rarity</p>
               <div className="flex flex-wrap gap-2">
@@ -328,14 +331,7 @@ function Shop() {
                   return (
                     <button key={rarity} onClick={() => setActiveRarity(isActive ? null : rarity)}
                       className="px-3 py-2 rounded-lg text-xs font-bold transition-all"
-                      style={isActive ? {
-                        background: style.bg, color: style.color,
-                        border: `1px solid ${style.border}`,
-                        boxShadow: `0 0 10px ${style.bg}`,
-                      } : {
-                        background: 'rgba(255,255,255,0.03)', color: '#9ca3af',
-                        border: '1px solid rgba(74,222,128,0.15)',
-                      }}>
+                      style={isActive ? { background: style.bg, color: style.color, border: `1px solid ${style.border}`, boxShadow: `0 0 10px ${style.bg}` } : { background: 'rgba(255,255,255,0.03)', color: '#9ca3af', border: '1px solid rgba(74,222,128,0.15)' }}>
                       {rarity}
                     </button>
                   )
@@ -379,11 +375,37 @@ function Shop() {
             <p className="text-gray-500 text-xl">No items found</p>
           </div>
         ) : (
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
-            {filteredGroups.map(([name, combos]) => (
-              <PetCard key={name} petName={name} combos={combos} />
-            ))}
-          </div>
+          <>
+            <p className="text-xs font-bold mb-4" style={{ color: 'rgba(74,222,128,0.4)' }}>
+              Showing {visibleGroups.length} of {filteredGroups.length} items
+            </p>
+
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
+              {visibleGroups.map(([name, combos]) => (
+                <PetCard key={name} petName={name} combos={combos} />
+              ))}
+            </div>
+
+            {/* Load More */}
+            {hasMore && (
+              <div className="text-center mt-12">
+                <button
+                  onClick={() => setVisibleCount(prev => prev + PAGE_SIZE)}
+                  className="px-10 py-4 rounded-2xl font-bold text-sm transition-all hover:scale-105"
+                  style={{ background: 'rgba(74,222,128,0.06)', border: '1px solid rgba(74,222,128,0.25)', color: '#86efac', boxShadow: '0 0 20px rgba(74,222,128,0.08)' }}
+                  onMouseEnter={e => { e.currentTarget.style.background = 'rgba(74,222,128,0.12)'; e.currentTarget.style.boxShadow = '0 0 30px rgba(74,222,128,0.15)' }}
+                  onMouseLeave={e => { e.currentTarget.style.background = 'rgba(74,222,128,0.06)'; e.currentTarget.style.boxShadow = '0 0 20px rgba(74,222,128,0.08)' }}>
+                  Load More · {remaining} remaining
+                </button>
+              </div>
+            )}
+
+            {!hasMore && filteredGroups.length > PAGE_SIZE && (
+              <p className="text-center mt-10 text-xs font-bold" style={{ color: 'rgba(74,222,128,0.3)' }}>
+                ✦ All {filteredGroups.length} items loaded ✦
+              </p>
+            )}
+          </>
         )}
       </div>
     </div>
