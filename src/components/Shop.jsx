@@ -5,9 +5,17 @@ import { supabase } from '../supabase'
 
 const categories = ['All', 'Adopt Me Pet', 'Egg', 'Roblox Item', 'Pet Wear']
 
+const RARITY_STYLES = {
+  'Common':     { color: '#7dd3fc', bg: 'rgba(125,211,252,0.1)',  border: 'rgba(125,211,252,0.25)' },
+  'Uncommon':   { color: '#3b82f6', bg: 'rgba(59,130,246,0.1)',   border: 'rgba(59,130,246,0.25)'  },
+  'Rare':       { color: '#4ade80', bg: 'rgba(74,222,128,0.1)',   border: 'rgba(74,222,128,0.25)'  },
+  'Ultra Rare': { color: '#f87171', bg: 'rgba(248,113,113,0.1)',  border: 'rgba(248,113,113,0.25)' },
+  'Legendary':  { color: '#9ca3af', bg: 'rgba(75,85,99,0.2)',     border: 'rgba(107,114,128,0.35)' },
+}
+
 const TYPE_STYLES = {
   Normal: { label: 'Normal', color: '#9ca3af', active: '#e5e7eb', glow: 'rgba(229,231,235,0.3)' },
-  Neon:   { label: 'Neon',   color: '#4ade80', active: '#4ade80', glow: 'rgba(74,222,128,0.4)' },
+  Neon:   { label: 'Neon',   color: '#4ade80', active: '#4ade80', glow: 'rgba(74,222,128,0.4)'  },
   Mega:   { label: 'Mega',   color: '#c084fc', active: '#c084fc', glow: 'rgba(192,132,252,0.4)' },
 }
 
@@ -80,6 +88,8 @@ function PetCard({ petName, combos }) {
   }
 
   const typeStyle = TYPE_STYLES[selectedType] || TYPE_STYLES.Normal
+  const rarity = combos[0].rarity
+  const rarityStyle = RARITY_STYLES[rarity]
 
   return (
     <div
@@ -97,6 +107,15 @@ function PetCard({ petName, combos }) {
       <div className="rounded-xl p-3 mb-4 flex items-center justify-center h-36 relative" style={{ background: 'rgba(255,255,255,0.03)' }}>
         <img src={combos[0].image_url} alt={petName} className="h-full object-contain" />
         <div className="absolute top-2 right-2"><Badge type={selectedType} potion={selectedPotion} /></div>
+        {/* Rarity badge on image */}
+        {rarityStyle && (
+          <div className="absolute bottom-2 left-2">
+            <span className="text-xs font-black px-2 py-0.5 rounded-full"
+              style={{ background: rarityStyle.bg, color: rarityStyle.color, border: `1px solid ${rarityStyle.border}`, fontSize: '10px', letterSpacing: '0.5px' }}>
+              {rarity}
+            </span>
+          </div>
+        )}
       </div>
 
       <h3 className="text-white font-bold text-base mb-0.5">{petName}</h3>
@@ -177,6 +196,7 @@ function Shop() {
   const [minPrice, setMinPrice] = useState('')
   const [maxPrice, setMaxPrice] = useState('')
   const [stockFilter, setStockFilter] = useState('all')
+  const [activeRarity, setActiveRarity] = useState(null)
   const [showFilters, setShowFilters] = useState(false)
 
   const [activeCategory, setActiveCategory] = useState(() => {
@@ -215,6 +235,7 @@ function Shop() {
     const matchesSearch = name.toLowerCase().includes(search.toLowerCase())
     const matchesCategory = activeCategory === 'All' || combos[0].category === activeCategory
     const matchesType = !activeType || combos.some(c => c.type === activeType)
+    const matchesRarity = !activeRarity || combos[0].rarity === activeRarity
     const min = minPrice !== '' ? parseFloat(minPrice) : null
     const max = maxPrice !== '' ? parseFloat(maxPrice) : null
     const matchesPrice = combos.some(c => {
@@ -224,7 +245,7 @@ function Shop() {
     })
     const totalStock = combos.reduce((sum, c) => sum + (c.stock || 0), 0)
     const matchesStock = stockFilter === 'all' ? true : stockFilter === 'instock' ? totalStock > 0 : totalStock <= 0
-    return matchesSearch && matchesCategory && matchesType && matchesPrice && matchesStock
+    return matchesSearch && matchesCategory && matchesType && matchesRarity && matchesPrice && matchesStock
   })
 
   if (loading) return (
@@ -264,6 +285,8 @@ function Shop() {
         {showFilters && (
           <div className="rounded-2xl p-5 mb-6 flex flex-wrap gap-6"
             style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(74,222,128,0.1)' }}>
+
+            {/* Price Range */}
             <div>
               <p className="text-xs font-bold tracking-widest uppercase mb-2" style={{ color: 'rgba(74,222,128,0.6)' }}>Price Range</p>
               <div className="flex items-center gap-2">
@@ -281,6 +304,8 @@ function Shop() {
                 )}
               </div>
             </div>
+
+            {/* Availability */}
             <div>
               <p className="text-xs font-bold tracking-widest uppercase mb-2" style={{ color: 'rgba(74,222,128,0.6)' }}>Availability</p>
               <div className="flex gap-2">
@@ -291,6 +316,30 @@ function Shop() {
                     {opt.label}
                   </button>
                 ))}
+              </div>
+            </div>
+
+            {/* Rarity */}
+            <div>
+              <p className="text-xs font-bold tracking-widest uppercase mb-2" style={{ color: 'rgba(74,222,128,0.6)' }}>Rarity</p>
+              <div className="flex flex-wrap gap-2">
+                {Object.entries(RARITY_STYLES).map(([rarity, style]) => {
+                  const isActive = activeRarity === rarity
+                  return (
+                    <button key={rarity} onClick={() => setActiveRarity(isActive ? null : rarity)}
+                      className="px-3 py-2 rounded-lg text-xs font-bold transition-all"
+                      style={isActive ? {
+                        background: style.bg, color: style.color,
+                        border: `1px solid ${style.border}`,
+                        boxShadow: `0 0 10px ${style.bg}`,
+                      } : {
+                        background: 'rgba(255,255,255,0.03)', color: '#9ca3af',
+                        border: '1px solid rgba(74,222,128,0.15)',
+                      }}>
+                      {rarity}
+                    </button>
+                  )
+                })}
               </div>
             </div>
           </div>
