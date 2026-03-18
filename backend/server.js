@@ -209,7 +209,12 @@ app.post('/webhook', express.raw({ type: 'application/json' }), async (req, res)
 
 // ── Update order status + send email ──
 app.post('/update-order-status', async (req, res) => {
-  const { orderId, status } = req.body
+  const { orderId, status, adminSecret } = req.body
+
+  // Verify admin secret
+  if (adminSecret !== process.env.ADMIN_SECRET) {
+    return res.status(401).json({ error: 'Unauthorized' })
+  }
 
   const { data: order, error: fetchError } = await supabase
     .from('orders').select('*').eq('id', orderId).single()

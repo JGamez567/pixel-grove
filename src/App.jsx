@@ -17,6 +17,7 @@ import CartDrawer from './components/CartDrawer'
 import ItemDetail from './components/ItemDetail'
 import AuthPage from './components/AuthPage'
 import Account from './components/Account'
+import AdminPanel from './components/AdminPanel'
 
 function App() {
   return (
@@ -38,7 +39,8 @@ function App() {
             <Route path="/refund-policy" element={<RefundPolicy />} />
             <Route path="/shop/:name" element={<ItemDetail />} />
             <Route path="/login" element={<AuthPage />} />
-<Route path="/account" element={<Account />} />
+            <Route path="/account" element={<Account />} />
+            <Route path="/admin" element={<AdminPanel />} />
 
           </Routes>
           <ChatWidget />
