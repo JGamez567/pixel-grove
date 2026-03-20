@@ -10,12 +10,56 @@ const STATUS_STYLES = {
   delayed:     { label: 'Delayed',          color: '#fb923c', bg: 'rgba(251,146,60,0.1)',   border: 'rgba(251,146,60,0.25)'  },
 }
 
+function ReviewForm({ user, orderId, onSubmitted }) {
+  const [message, setMessage] = useState('')
+  const [rating, setRating] = useState(5)
+  const [loading, setLoading] = useState(false)
+
+  async function handleSubmit() {
+    if (!message.trim()) return
+    setLoading(true)
+    const { error } = await supabase.from('reviews').insert({
+      username: user.user_metadata?.username || user.email?.split('@')[0],
+      message,
+      rating,
+      approved: false,
+      verified: true,
+    })
+    if (!error) onSubmitted(orderId)
+    setLoading(false)
+  }
+
+  return (
+    <div style={{ marginTop: '14px', padding: '16px', borderRadius: '14px', background: 'rgba(74,222,128,0.03)', border: '1px solid rgba(74,222,128,0.12)' }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+        <p style={{ color: '#f0faf0', fontWeight: 700, fontSize: '13px', margin: 0 }}>Leave a Review</p>
+        <span style={{ fontSize: '10px', fontWeight: 700, padding: '2px 8px', borderRadius: '999px', background: 'rgba(74,222,128,0.1)', color: '#4ade80', border: '1px solid rgba(74,222,128,0.25)' }}>✓ Verified</span>
+      </div>
+      <div style={{ display: 'flex', gap: '6px', marginBottom: '10px' }}>
+        {[1,2,3,4,5].map(star => (
+          <button key={star} onClick={() => setRating(star)} style={{ fontSize: '20px', background: 'none', border: 'none', cursor: 'pointer', opacity: star <= rating ? 1 : 0.25, transition: 'all 0.15s', transform: star <= rating ? 'scale(1.1)' : 'scale(1)' }}>⭐</button>
+        ))}
+      </div>
+      <textarea placeholder="Tell us about your experience..." value={message} onChange={e => setMessage(e.target.value)} rows={2}
+        style={{ width: '100%', padding: '10px 14px', borderRadius: '10px', background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(74,222,128,0.18)', color: '#f0faf0', fontSize: '13px', outline: 'none', resize: 'none', fontFamily: 'system-ui, sans-serif', boxSizing: 'border-box', marginBottom: '10px', transition: 'border-color 0.2s' }}
+        onFocus={e => e.target.style.borderColor = 'rgba(74,222,128,0.4)'}
+        onBlur={e => e.target.style.borderColor = 'rgba(74,222,128,0.18)'} />
+      <button onClick={handleSubmit} disabled={loading || !message.trim()}
+        style={{ padding: '9px 20px', borderRadius: '10px', background: loading || !message.trim() ? 'rgba(74,222,128,0.2)' : 'linear-gradient(135deg, #4ade80, #22c55e)', color: '#000', fontWeight: 700, fontSize: '13px', cursor: loading || !message.trim() ? 'not-allowed' : 'pointer', border: 'none', transition: 'all 0.2s' }}>
+        {loading ? 'Submitting...' : 'Submit Review'}
+      </button>
+    </div>
+  )
+}
+
 export default function Account() {
   const [user, setUser] = useState(null)
   const [orders, setOrders] = useState([])
   const [wishlist, setWishlist] = useState([])
   const [tab, setTab] = useState('orders')
   const [loading, setLoading] = useState(true)
+  const [reviewedOrders, setReviewedOrders] = useState(new Set())
+  const [openReviewId, setOpenReviewId] = useState(null)
   const navigate = useNavigate()
 
   useEffect(() => {
@@ -24,26 +68,14 @@ export default function Account() {
       if (!user) { navigate('/login'); return }
       setUser(user)
 
-      // Fetch orders by email
       const { data: ordersData } = await supabase
-        .from('orders')
-        .select('*')
-        .eq('email', user.email)
-        .order('created_at', { ascending: false })
+        .from('orders').select('*').eq('email', user.email).order('created_at', { ascending: false })
       if (ordersData) setOrders(ordersData)
 
-      // Fetch wishlist then manually fetch each item
-      const { data: wishlistData } = await supabase
-        .from('wishlist')
-        .select('*')
-        .eq('user_id', user.id)
-
+      const { data: wishlistData } = await supabase.from('wishlist').select('*').eq('user_id', user.id)
       if (wishlistData && wishlistData.length > 0) {
         const itemIds = wishlistData.map(w => w.item_id)
-        const { data: itemsData } = await supabase
-          .from('items')
-          .select('*')
-          .in('id', itemIds)
+        const { data: itemsData } = await supabase.from('items').select('*').in('id', itemIds)
         const itemsMap = {}
         itemsData?.forEach(item => { itemsMap[item.id] = item })
         setWishlist(wishlistData.map(w => ({ ...w, items: itemsMap[w.item_id] || null })))
@@ -64,6 +96,11 @@ export default function Account() {
   async function removeFromWishlist(id) {
     await supabase.from('wishlist').delete().eq('id', id)
     setWishlist(prev => prev.filter(w => w.id !== id))
+  }
+
+  function handleReviewSubmitted(orderId) {
+    setReviewedOrders(prev => new Set([...prev, orderId]))
+    setOpenReviewId(null)
   }
 
   if (loading) return (
@@ -102,12 +139,7 @@ export default function Account() {
         <div style={{ display: 'flex', gap: '4px', marginBottom: '28px', background: 'rgba(255,255,255,0.02)', borderRadius: '14px', padding: '4px', border: '1px solid rgba(74,222,128,0.08)' }}>
           {[{ key: 'orders', label: '📦 Order History' }, { key: 'wishlist', label: '❤️ Wishlist' }].map(t => (
             <button key={t.key} onClick={() => setTab(t.key)}
-              style={{
-                flex: 1, padding: '11px', borderRadius: '11px', fontSize: '13px', fontWeight: 700,
-                cursor: 'pointer', border: 'none', transition: 'all 0.2s',
-                background: tab === t.key ? 'linear-gradient(135deg, #4ade80, #22c55e)' : 'transparent',
-                color: tab === t.key ? '#000' : '#6b7280',
-              }}>
+              style={{ flex: 1, padding: '11px', borderRadius: '11px', fontSize: '13px', fontWeight: 700, cursor: 'pointer', border: 'none', transition: 'all 0.2s', background: tab === t.key ? 'linear-gradient(135deg, #4ade80, #22c55e)' : 'transparent', color: tab === t.key ? '#000' : '#6b7280' }}>
               {t.label}
             </button>
           ))}
@@ -121,15 +153,16 @@ export default function Account() {
                 <div style={{ fontSize: '48px', marginBottom: '14px' }}>📦</div>
                 <p style={{ color: '#f0faf0', fontWeight: 700, fontSize: '18px', marginBottom: '8px' }}>No orders yet</p>
                 <p style={{ color: '#6b7280', fontSize: '14px', marginBottom: '20px' }}>Head to the shop to grab your first pet!</p>
-                <Link to="/shop" style={{ display: 'inline-block', padding: '12px 28px', borderRadius: '12px', background: 'linear-gradient(135deg, #4ade80, #22c55e)', color: '#000', fontWeight: 700, fontSize: '14px', textDecoration: 'none' }}>
-                  Browse Shop
-                </Link>
+                <Link to="/shop" style={{ display: 'inline-block', padding: '12px 28px', borderRadius: '12px', background: 'linear-gradient(135deg, #4ade80, #22c55e)', color: '#000', fontWeight: 700, fontSize: '14px', textDecoration: 'none' }}>Browse Shop</Link>
               </div>
             ) : orders.map(order => {
               const statusStyle = STATUS_STYLES[order.status] || STATUS_STYLES.pending
+              const isReviewed = reviewedOrders.has(order.id)
+              const isOpen = openReviewId === order.id
               return (
                 <div key={order.id} style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(74,222,128,0.08)', borderRadius: '20px', padding: '20px', position: 'relative', overflow: 'hidden' }}>
                   <div style={{ position: 'absolute', top: 0, left: 0, right: 0, height: '1px', background: 'linear-gradient(90deg, transparent, rgba(74,222,128,0.2), transparent)' }} />
+
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '10px', marginBottom: '12px' }}>
                     <div>
                       <p style={{ color: '#6b7280', fontSize: '11px', fontWeight: 600, letterSpacing: '1px', textTransform: 'uppercase', marginBottom: '4px' }}>
@@ -143,13 +176,17 @@ export default function Account() {
                       {statusStyle.label}
                     </span>
                   </div>
+
                   <p style={{ color: '#f0faf0', fontSize: '14px', marginBottom: '10px', lineHeight: '1.6' }}>{order.items}</p>
+
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <span style={{ color: '#6b7280', fontSize: '12px' }}>Roblox: <strong style={{ color: '#9ca3af' }}>{order.username}</strong></span>
                     <span style={{ fontWeight: 800, fontSize: '16px', background: 'linear-gradient(135deg, #4ade80, #86efac)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
                       ${order.total?.toFixed(2)}
                     </span>
                   </div>
+
+                  {/* Status messages */}
                   {order.status === 'delayed' && (
                     <div style={{ marginTop: '12px', padding: '10px 14px', borderRadius: '10px', background: 'rgba(251,146,60,0.08)', border: '1px solid rgba(251,146,60,0.2)', color: '#fb923c', fontSize: '12px' }}>
                       ⏰ Your order is outside our delivery window. We'll deliver between 12PM–2AM CST tomorrow!
@@ -163,6 +200,29 @@ export default function Account() {
                   {order.status === 'delivered' && (
                     <div style={{ marginTop: '12px', padding: '10px 14px', borderRadius: '10px', background: 'rgba(74,222,128,0.08)', border: '1px solid rgba(74,222,128,0.2)', color: '#4ade80', fontSize: '12px' }}>
                       ✅ Your pet has been delivered! Enjoy your new pet 🌿
+                    </div>
+                  )}
+
+                  {/* Review button for delivered orders */}
+                  {order.status === 'delivered' && !isReviewed && (
+                    <div style={{ marginTop: '12px' }}>
+                      {!isOpen ? (
+                        <button onClick={() => setOpenReviewId(order.id)}
+                          style={{ padding: '8px 18px', borderRadius: '10px', background: 'rgba(74,222,128,0.06)', border: '1px solid rgba(74,222,128,0.2)', color: '#4ade80', fontWeight: 600, fontSize: '12px', cursor: 'pointer', transition: 'all 0.2s' }}
+                          onMouseEnter={e => e.currentTarget.style.background = 'rgba(74,222,128,0.12)'}
+                          onMouseLeave={e => e.currentTarget.style.background = 'rgba(74,222,128,0.06)'}>
+                          ⭐ Leave a Review
+                        </button>
+                      ) : (
+                        <ReviewForm user={user} orderId={order.id} onSubmitted={handleReviewSubmitted} />
+                      )}
+                    </div>
+                  )}
+
+                  {/* Already reviewed */}
+                  {isReviewed && (
+                    <div style={{ marginTop: '12px', padding: '8px 14px', borderRadius: '10px', background: 'rgba(74,222,128,0.05)', border: '1px solid rgba(74,222,128,0.15)', color: '#4ade80', fontSize: '12px', fontWeight: 600 }}>
+                      ✓ Review submitted — thank you!
                     </div>
                   )}
                 </div>
@@ -179,9 +239,7 @@ export default function Account() {
                 <div style={{ fontSize: '48px', marginBottom: '14px' }}>❤️</div>
                 <p style={{ color: '#f0faf0', fontWeight: 700, fontSize: '18px', marginBottom: '8px' }}>No wishlist items yet</p>
                 <p style={{ color: '#6b7280', fontSize: '14px', marginBottom: '20px' }}>Save pets you want to buy later!</p>
-                <Link to="/shop" style={{ display: 'inline-block', padding: '12px 28px', borderRadius: '12px', background: 'linear-gradient(135deg, #4ade80, #22c55e)', color: '#000', fontWeight: 700, fontSize: '14px', textDecoration: 'none' }}>
-                  Browse Shop
-                </Link>
+                <Link to="/shop" style={{ display: 'inline-block', padding: '12px 28px', borderRadius: '12px', background: 'linear-gradient(135deg, #4ade80, #22c55e)', color: '#000', fontWeight: 700, fontSize: '14px', textDecoration: 'none' }}>Browse Shop</Link>
               </div>
             ) : (
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '14px' }}>
@@ -192,21 +250,13 @@ export default function Account() {
                       ✕
                     </button>
                     <div style={{ height: '100px', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: '12px' }}>
-                      {w.items?.image_url
-                        ? <img src={w.items.image_url} alt={w.items?.name} style={{ maxHeight: '80px', objectFit: 'contain' }} />
-                        : <span style={{ fontSize: '36px' }}>🐾</span>
-                      }
+                      {w.items?.image_url ? <img src={w.items.image_url} alt={w.items?.name} style={{ maxHeight: '80px', objectFit: 'contain' }} /> : <span style={{ fontSize: '36px' }}>🐾</span>}
                     </div>
                     <p style={{ color: '#f0faf0', fontWeight: 700, fontSize: '14px', marginBottom: '4px' }}>{w.items?.name}</p>
                     <p style={{ color: 'rgba(74,222,128,0.5)', fontSize: '11px', marginBottom: '10px' }}>{w.items?.category}</p>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                      <span style={{ fontWeight: 800, fontSize: '15px', background: 'linear-gradient(135deg, #4ade80, #86efac)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
-                        ${w.items?.price}
-                      </span>
-                      <Link to={`/shop/${encodeURIComponent(w.items?.name)}`}
-                        style={{ fontSize: '11px', fontWeight: 700, padding: '5px 10px', borderRadius: '8px', background: 'rgba(74,222,128,0.1)', color: '#4ade80', border: '1px solid rgba(74,222,128,0.2)', textDecoration: 'none' }}>
-                        View
-                      </Link>
+                      <span style={{ fontWeight: 800, fontSize: '15px', background: 'linear-gradient(135deg, #4ade80, #86efac)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>${w.items?.price}</span>
+                      <Link to={`/shop/${encodeURIComponent(w.items?.name)}`} style={{ fontSize: '11px', fontWeight: 700, padding: '5px 10px', borderRadius: '8px', background: 'rgba(74,222,128,0.1)', color: '#4ade80', border: '1px solid rgba(74,222,128,0.2)', textDecoration: 'none' }}>View</Link>
                     </div>
                   </div>
                 ))}
