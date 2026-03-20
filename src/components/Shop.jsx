@@ -438,7 +438,7 @@ function Shop() {
               {sortBy === 'za' && <span style={{ color: 'rgba(74,222,128,0.6)' }}> · Z → A</span>}
             </p>
 
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
+            <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-3 gap-4 md:gap-6" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))' }}>
               {visibleGroups.map(([name, combos]) => (
                 <PetCard key={name} petName={name} combos={combos} />
               ))}
