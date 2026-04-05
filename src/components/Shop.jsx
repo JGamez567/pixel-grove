@@ -97,7 +97,10 @@ function PetCard({ petName, combos }) {
     <div
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
-      onClick={() => navigate(`/shop/${encodeURIComponent(petName)}`)}
+      onClick={() => {
+  sessionStorage.setItem('shop_scroll', window.scrollY)
+  navigate(`/shop/${encodeURIComponent(petName)}`)
+}}
       className="rounded-2xl p-5 transition-all duration-300 flex flex-col cursor-pointer"
       style={{
         background: 'rgba(255,255,255,0.02)',
@@ -192,7 +195,9 @@ function Shop() {
   const [items, setItems] = useState([])
   const [loading, setLoading] = useState(true)
   const [visible, setVisible] = useState(false)
-  const [visibleCount, setVisibleCount] = useState(PAGE_SIZE)
+  const [visibleCount, setVisibleCount] = useState(() => {
+  return parseInt(sessionStorage.getItem('shop_visible') || PAGE_SIZE)
+})
   const [searchParams] = useSearchParams()
   const [search, setSearch] = useState(() => searchParams.get('search') || '')
   const [minPrice, setMinPrice] = useState('')
@@ -218,7 +223,22 @@ function Shop() {
     return null
   })
 
-  useEffect(() => { setVisibleCount(PAGE_SIZE) }, [search, activeCategory, activeType, activeRarity, minPrice, maxPrice, stockFilter, sortBy])
+  useEffect(() => { 
+  setVisibleCount(PAGE_SIZE)
+  sessionStorage.removeItem('shop_visible')
+  sessionStorage.removeItem('shop_scroll')
+}, [search, activeCategory, activeType, activeRarity, minPrice, maxPrice, stockFilter, sortBy])
+useEffect(() => {
+  const saved = sessionStorage.getItem('shop_scroll')
+  if (saved) window.scrollTo(0, parseInt(saved))
+}, [loading])
+
+useEffect(() => {
+  setVisibleCount(prev => {
+    sessionStorage.setItem('shop_visible', prev)
+    return prev
+  })
+}, [visibleCount])
 
   useEffect(() => {
     setTimeout(() => setVisible(true), 100)
