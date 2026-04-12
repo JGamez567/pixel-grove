@@ -110,7 +110,7 @@ function PetCard({ petName, combos }) {
       }}>
 
       <div className="rounded-xl p-3 mb-4 flex items-center justify-center h-36 relative" style={{ background: 'rgba(255,255,255,0.03)' }}>
-        <img src={combos[0].image_url} alt={petName} className="h-full object-contain" />
+        <img src={combos[0].image_url} alt={petName} loading="lazy" className="h-full object-contain" />
         <div className="absolute top-2 right-2"><Badge type={selectedType} potion={selectedPotion} /></div>
         {rarityStyle && (
           <div className="absolute bottom-2 left-2">

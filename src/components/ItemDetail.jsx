@@ -199,7 +199,7 @@ function ItemDetail() {
                 backgroundImage: 'linear-gradient(rgba(74,222,128,1) 1px, transparent 1px), linear-gradient(90deg, rgba(74,222,128,1) 1px, transparent 1px)',
                 backgroundSize: '40px 40px',
               }} />
-              <img src={currentCombo.image_url} alt={decodedName}
+              <img src={currentCombo.image_url} alt={decodedName} loading = "lazy"
                 style={{ maxHeight: '260px', maxWidth: '100%', objectFit: 'contain', position: 'relative', zIndex: 1, filter: `drop-shadow(0 0 30px ${typeStyle.glow})`, transition: 'filter 0.5s ease' }} />
             </div>
 

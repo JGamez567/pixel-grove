@@ -126,7 +126,7 @@ function FeaturedCard({ item }) {
           : <span style={{ color: 'rgba(74,222,128,0.5)', fontSize: '11px', fontWeight: 600 }}>{item.stock} in stock</span>}
       </div>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '140px', marginBottom: '16px', background: 'rgba(255,255,255,0.02)', borderRadius: '14px', border: '1px solid rgba(74,222,128,0.06)' }}>
-        {item.image_url ? <img src={item.image_url} alt={item.name} style={{ maxHeight: '118px', objectFit: 'contain', filter: hovered ? 'drop-shadow(0 0 18px rgba(74,222,128,0.45))' : 'none', transition: 'filter 0.35s' }} /> : <span style={{ fontSize: '44px' }}>🐾</span>}
+        {item.image_url ? <img src={item.image_url} alt={item.name} loading = "lazy" style={{ maxHeight: '118px', objectFit: 'contain', filter: hovered ? 'drop-shadow(0 0 18px rgba(74,222,128,0.45))' : 'none', transition: 'filter 0.35s' }} /> : <span style={{ fontSize: '44px' }}>🐾</span>}
       </div>
       <h3 style={{ color: '#f0faf0', fontWeight: 700, fontSize: '15px', marginBottom: '4px', fontFamily: 'Outfit, sans-serif' }}>{item.name}</h3>
       <p style={{ color: 'rgba(74,222,128,0.5)', fontSize: '10px', fontWeight: 600, letterSpacing: '2px', textTransform: 'uppercase', marginBottom: '14px', fontFamily: 'DM Sans, sans-serif' }}>
