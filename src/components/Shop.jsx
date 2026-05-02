@@ -308,13 +308,68 @@ useEffect(() => {
   const remaining = sortedGroups.length - visibleCount
 
   if (loading) return (
-    <div className="min-h-screen bg-gray-950 flex items-center justify-center">
-      <div className="text-center">
-        <div className="text-4xl mb-4">🌿</div>
-        <p className="font-bold tracking-widest uppercase text-sm" style={{ color: '#4ade80' }}>Loading items...</p>
+  <div className="min-h-screen bg-gray-950">
+    <style>{`
+      @keyframes shimmer {
+        0% { background-position: -600px 0 }
+        100% { background-position: 600px 0 }
+      }
+      .shimmer {
+        background: linear-gradient(90deg, rgba(255,255,255,0.03) 25%, rgba(74,222,128,0.07) 50%, rgba(255,255,255,0.03) 75%);
+        background-size: 600px 100%;
+        animation: shimmer 1.6s infinite linear;
+      }
+    `}</style>
+
+    <div className="relative px-4 md:px-8 py-16 max-w-6xl mx-auto">
+      {/* Header skeleton */}
+      <div className="shimmer h-3 w-32 rounded-full mb-4" />
+      <div className="shimmer h-10 w-64 rounded-xl mb-3" />
+      <div className="shimmer h-3 w-48 rounded-full mb-10" />
+
+      {/* Search bar skeleton */}
+      <div className="flex gap-3 mb-10">
+        <div className="shimmer flex-1 h-14 rounded-xl" />
+        <div className="shimmer w-28 h-14 rounded-xl" />
+      </div>
+
+      {/* Category buttons skeleton */}
+      <div className="flex gap-2 mb-10">
+        {[80, 60, 55, 65, 80].map((w, i) => (
+          <div key={i} className="shimmer h-9 rounded-xl" style={{ width: w }} />
+        ))}
+      </div>
+
+      {/* Cards grid skeleton */}
+      <div className="grid gap-4 md:gap-6" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))' }}>
+        {Array.from({ length: 18 }).map((_, i) => (
+          <div key={i} className="rounded-2xl p-5 flex flex-col"
+            style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(74,222,128,0.08)' }}>
+            {/* Image area */}
+            <div className="shimmer rounded-xl mb-4 h-36 w-full" />
+            {/* Pet name */}
+            <div className="shimmer h-4 w-3/4 rounded-full mb-2" />
+            {/* Category label */}
+            <div className="shimmer h-3 w-1/2 rounded-full mb-4" />
+            {/* Type buttons */}
+            <div className="flex gap-1.5 mb-2">
+              <div className="shimmer flex-1 h-8 rounded-lg" />
+              <div className="shimmer flex-1 h-8 rounded-lg" />
+            </div>
+            {/* Price + button */}
+            <div className="mt-auto pt-2">
+              <div className="flex justify-between mb-2">
+                <div className="shimmer h-6 w-16 rounded-full" />
+                <div className="shimmer h-4 w-20 rounded-full" />
+              </div>
+              <div className="shimmer h-10 w-full rounded-xl" />
+            </div>
+          </div>
+        ))}
       </div>
     </div>
-  )
+  </div>
+)
 
   return (
     <div className="min-h-screen bg-gray-950">
