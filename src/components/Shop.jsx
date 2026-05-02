@@ -248,10 +248,18 @@ function Shop() {
   })
 
   useEffect(() => {
-    setVisibleCount(PAGE_SIZE)
-    sessionStorage.removeItem('shop_visible')
-    sessionStorage.removeItem('shop_scroll')
-  }, [search, activeCategory, activeType, activeRarity, minPrice, maxPrice, stockFilter, sortBy])
+  if (!loading) {
+    const saved = sessionStorage.getItem('shop_scroll')
+    if (saved) {
+      requestAnimationFrame(() => {
+        setTimeout(() => {
+          window.scrollTo(0, parseInt(saved))
+          sessionStorage.removeItem('shop_scroll')
+        }, 100)
+      })
+    }
+  }
+}, [loading])
 
   useEffect(() => {
     const saved = sessionStorage.getItem('shop_scroll')
