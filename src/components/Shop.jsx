@@ -28,6 +28,18 @@ const POTION_STYLES = {
   'Fly-Ride':  { label: 'Fly-Ride', color: '#f59e0b' },
 }
 
+const SHIMMER_STYLE = `
+  @keyframes shimmer {
+    0% { background-position: -600px 0 }
+    100% { background-position: 600px 0 }
+  }
+  .shimmer {
+    background: linear-gradient(90deg, rgba(255,255,255,0.03) 25%, rgba(74,222,128,0.07) 50%, rgba(255,255,255,0.03) 75%);
+    background-size: 600px 100%;
+    animation: shimmer 1.6s infinite linear;
+  }
+`
+
 function Badge({ type, potion }) {
   return (
     <div className="flex gap-1 flex-wrap">
@@ -50,6 +62,7 @@ function StockLabel({ stock }) {
 function PetCard({ petName, combos }) {
   const { addToCart, cart } = useCart()
   const [hovered, setHovered] = useState(false)
+  const [imgLoaded, setImgLoaded] = useState(false)
   const navigate = useNavigate()
 
   const availableTypes = [...new Set(combos.map(c => c.type))]
@@ -98,9 +111,9 @@ function PetCard({ petName, combos }) {
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
       onClick={() => {
-  sessionStorage.setItem('shop_scroll', window.scrollY)
-  navigate(`/shop/${encodeURIComponent(petName)}`)
-}}
+        sessionStorage.setItem('shop_scroll', window.scrollY)
+        navigate(`/shop/${encodeURIComponent(petName)}`)
+      }}
       className="rounded-2xl p-5 transition-all duration-300 flex flex-col cursor-pointer"
       style={{
         background: 'rgba(255,255,255,0.02)',
@@ -110,10 +123,21 @@ function PetCard({ petName, combos }) {
       }}>
 
       <div className="rounded-xl p-3 mb-4 flex items-center justify-center h-36 relative" style={{ background: 'rgba(255,255,255,0.03)' }}>
-        <img src={combos[0].image_url} alt={petName} loading="lazy" className="h-full object-contain" />
-        <div className="absolute top-2 right-2"><Badge type={selectedType} potion={selectedPotion} /></div>
+        {/* Image shimmer placeholder */}
+        {!imgLoaded && (
+          <div className="shimmer absolute inset-0 rounded-xl" />
+        )}
+        <img
+          src={combos[0].image_url}
+          alt={petName}
+          loading="lazy"
+          onLoad={() => setImgLoaded(true)}
+          className="h-full object-contain relative z-10 transition-opacity duration-300"
+          style={{ opacity: imgLoaded ? 1 : 0 }}
+        />
+        <div className="absolute top-2 right-2 z-20"><Badge type={selectedType} potion={selectedPotion} /></div>
         {rarityStyle && (
-          <div className="absolute bottom-2 left-2">
+          <div className="absolute bottom-2 left-2 z-20">
             <span className="text-xs font-black px-2 py-0.5 rounded-full"
               style={{ background: rarityStyle.bg, color: rarityStyle.color, border: `1px solid ${rarityStyle.border}`, fontSize: '10px', letterSpacing: '0.5px' }}>
               {rarity}
@@ -196,8 +220,8 @@ function Shop() {
   const [loading, setLoading] = useState(true)
   const [visible, setVisible] = useState(false)
   const [visibleCount, setVisibleCount] = useState(() => {
-  return parseInt(sessionStorage.getItem('shop_visible') || PAGE_SIZE)
-})
+    return parseInt(sessionStorage.getItem('shop_visible') || PAGE_SIZE)
+  })
   const [searchParams] = useSearchParams()
   const [search, setSearch] = useState(() => searchParams.get('search') || '')
   const [minPrice, setMinPrice] = useState('')
@@ -223,22 +247,23 @@ function Shop() {
     return null
   })
 
-  useEffect(() => { 
-  setVisibleCount(PAGE_SIZE)
-  sessionStorage.removeItem('shop_visible')
-  sessionStorage.removeItem('shop_scroll')
-}, [search, activeCategory, activeType, activeRarity, minPrice, maxPrice, stockFilter, sortBy])
-useEffect(() => {
-  const saved = sessionStorage.getItem('shop_scroll')
-  if (saved) window.scrollTo(0, parseInt(saved))
-}, [loading])
+  useEffect(() => {
+    setVisibleCount(PAGE_SIZE)
+    sessionStorage.removeItem('shop_visible')
+    sessionStorage.removeItem('shop_scroll')
+  }, [search, activeCategory, activeType, activeRarity, minPrice, maxPrice, stockFilter, sortBy])
 
-useEffect(() => {
-  setVisibleCount(prev => {
-    sessionStorage.setItem('shop_visible', prev)
-    return prev
-  })
-}, [visibleCount])
+  useEffect(() => {
+    const saved = sessionStorage.getItem('shop_scroll')
+    if (saved) window.scrollTo(0, parseInt(saved))
+  }, [loading])
+
+  useEffect(() => {
+    setVisibleCount(prev => {
+      sessionStorage.setItem('shop_visible', prev)
+      return prev
+    })
+  }, [visibleCount])
 
   useEffect(() => {
     setTimeout(() => setVisible(true), 100)
@@ -256,7 +281,6 @@ useEffect(() => {
       const map = {}
       data.forEach(order => {
         const text = order.items || ''
-        // each entry looks like "Dragon (Neon No Pot) x1"
         const entries = text.split(', ')
         entries.forEach(entry => {
           const match = entry.match(/^(.+?)\s*\(/)
@@ -308,71 +332,58 @@ useEffect(() => {
   const remaining = sortedGroups.length - visibleCount
 
   if (loading) return (
-  <div className="min-h-screen bg-gray-950">
-    <style>{`
-      @keyframes shimmer {
-        0% { background-position: -600px 0 }
-        100% { background-position: 600px 0 }
-      }
-      .shimmer {
-        background: linear-gradient(90deg, rgba(255,255,255,0.03) 25%, rgba(74,222,128,0.07) 50%, rgba(255,255,255,0.03) 75%);
-        background-size: 600px 100%;
-        animation: shimmer 1.6s infinite linear;
-      }
-    `}</style>
+    <div className="min-h-screen bg-gray-950">
+      <style>{SHIMMER_STYLE}</style>
+      <div className="relative px-4 md:px-8 py-16 max-w-6xl mx-auto">
+        {/* Header skeleton */}
+        <div className="shimmer h-3 w-32 rounded-full mb-4" />
+        <div className="shimmer h-10 w-64 rounded-xl mb-3" />
+        <div className="shimmer h-3 w-48 rounded-full mb-10" />
 
-    <div className="relative px-4 md:px-8 py-16 max-w-6xl mx-auto">
-      {/* Header skeleton */}
-      <div className="shimmer h-3 w-32 rounded-full mb-4" />
-      <div className="shimmer h-10 w-64 rounded-xl mb-3" />
-      <div className="shimmer h-3 w-48 rounded-full mb-10" />
+        {/* Search bar skeleton */}
+        <div className="flex gap-3 mb-10">
+          <div className="shimmer flex-1 h-14 rounded-xl" />
+          <div className="shimmer w-28 h-14 rounded-xl" />
+        </div>
 
-      {/* Search bar skeleton */}
-      <div className="flex gap-3 mb-10">
-        <div className="shimmer flex-1 h-14 rounded-xl" />
-        <div className="shimmer w-28 h-14 rounded-xl" />
-      </div>
+        {/* Category buttons skeleton */}
+        <div className="flex gap-2 mb-10">
+          {[80, 60, 55, 65, 80].map((w, i) => (
+            <div key={i} className="shimmer h-9 rounded-xl" style={{ width: w }} />
+          ))}
+        </div>
 
-      {/* Category buttons skeleton */}
-      <div className="flex gap-2 mb-10">
-        {[80, 60, 55, 65, 80].map((w, i) => (
-          <div key={i} className="shimmer h-9 rounded-xl" style={{ width: w }} />
-        ))}
-      </div>
-
-      {/* Cards grid skeleton */}
-      <div className="grid gap-4 md:gap-6" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))' }}>
-        {Array.from({ length: 18 }).map((_, i) => (
-          <div key={i} className="rounded-2xl p-5 flex flex-col"
-            style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(74,222,128,0.08)' }}>
-            {/* Image area */}
-            <div className="shimmer rounded-xl mb-4 h-36 w-full" />
-            {/* Pet name */}
-            <div className="shimmer h-4 w-3/4 rounded-full mb-2" />
-            {/* Category label */}
-            <div className="shimmer h-3 w-1/2 rounded-full mb-4" />
-            {/* Type buttons */}
-            <div className="flex gap-1.5 mb-2">
-              <div className="shimmer flex-1 h-8 rounded-lg" />
-              <div className="shimmer flex-1 h-8 rounded-lg" />
-            </div>
-            {/* Price + button */}
-            <div className="mt-auto pt-2">
-              <div className="flex justify-between mb-2">
-                <div className="shimmer h-6 w-16 rounded-full" />
-                <div className="shimmer h-4 w-20 rounded-full" />
+        {/* Cards grid skeleton */}
+        <div className="grid gap-4 md:gap-6" style={{ gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))' }}>
+          {Array.from({ length: 18 }).map((_, i) => (
+            <div key={i} className="rounded-2xl p-5 flex flex-col"
+              style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(74,222,128,0.08)' }}>
+              <div className="shimmer rounded-xl mb-4 h-36 w-full" />
+              <div className="shimmer h-4 w-3/4 rounded-full mb-2" />
+              <div className="shimmer h-3 w-1/2 rounded-full mb-4" />
+              <div className="flex gap-1.5 mb-2">
+                <div className="shimmer flex-1 h-8 rounded-lg" />
+                <div className="shimmer flex-1 h-8 rounded-lg" />
               </div>
-              <div className="shimmer h-10 w-full rounded-xl" />
+              <div className="mt-auto pt-2">
+                <div className="flex justify-between mb-2">
+                  <div className="shimmer h-6 w-16 rounded-full" />
+                  <div className="shimmer h-4 w-20 rounded-full" />
+                </div>
+                <div className="shimmer h-10 w-full rounded-xl" />
+              </div>
             </div>
-          </div>
-        ))}
+          ))}
+        </div>
       </div>
     </div>
-  </div>
-)
+  )
 
   return (
     <div className="min-h-screen bg-gray-950">
+      {/* Shimmer styles available for PetCard image loading */}
+      <style>{SHIMMER_STYLE}</style>
+
       <div className="fixed top-0 left-0 w-full h-full pointer-events-none"
         style={{ background: 'radial-gradient(ellipse at 50% 0%, rgba(74,222,128,0.04) 0%, transparent 60%)', zIndex: 0 }} />
 
